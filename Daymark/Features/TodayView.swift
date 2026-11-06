@@ -105,35 +105,36 @@ struct TodayView: View {
         .accessibilityHint("Quickly add a journal entry, event, habit, reflection, or milestone")
     }
 
-    @ViewBuilder
     private var dashboardSections: some View {
         ForEach(visibleSections) { section in
-            switch section {
-            case .journal:
-                TodayJournalCard(
-                    journal: journal,
-                    progress: journalProgress,
-                    note: journal.flatMap { store.entry(journalID: $0.id, date: today)?.note } ?? "",
-                    onOpen: openTodayJournal
-                )
-            case .schedule:
-                TodayScheduleCard(
-                    events: todayEvents,
-                    onOpenCalendar: { route.selectedTab = 1 },
-                    onOpenEvent: { occurrence in
-                        route.openEvent(occurrence.event.id, at: occurrence.start)
-                    }
-                )
-            case .habits:
-                TodayHabitsCard(
-                    habits: Array(todayHabits.prefix(3)),
-                    completed: completedHabits,
-                    total: todayHabits.count,
-                    onOpenHabits: { route.selectedTab = 2 },
-                    onToggle: { store.toggleHabit($0) }
-                )
-            case .insights:
-                TodayInsightsCard(store: store, today: today, onOpenInsights: { route.selectedTab = 4 })
+            Group {
+                switch section {
+                case .journal:
+                    TodayJournalCard(
+                        journal: journal,
+                        progress: journalProgress,
+                        note: journal.flatMap { store.entry(journalID: $0.id, date: today)?.note } ?? "",
+                        onOpen: openTodayJournal
+                    )
+                case .schedule:
+                    TodayScheduleCard(
+                        events: todayEvents,
+                        onOpenCalendar: { route.selectedTab = 1 },
+                        onOpenEvent: { occurrence in
+                            route.openEvent(occurrence.event.id, at: occurrence.start)
+                        }
+                    )
+                case .habits:
+                    TodayHabitsCard(
+                        habits: Array(todayHabits.prefix(3)),
+                        completed: completedHabits,
+                        total: todayHabits.count,
+                        onOpenHabits: { route.selectedTab = 2 },
+                        onToggle: { store.toggleHabit($0) }
+                    )
+                case .insights:
+                    TodayInsightsCard(store: store, today: today, onOpenInsights: { route.selectedTab = 4 })
+                }
             }
         }
     }
