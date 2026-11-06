@@ -252,3 +252,5 @@ struct AIProviderManager {
         }
     }
 }
+
+// Provider routing updates are stored in SwiftData with API keys in Keychain.
