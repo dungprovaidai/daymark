@@ -13,6 +13,11 @@ struct EventEditor: View {
     private let entireSeries: Bool
 
     init(date: Date) { _draft = State(initialValue: EventDraft(date: date)); original = nil; entireSeries = false }
+    init(date: Date, category: EventCategory) {
+        var draft = EventDraft(date: date)
+        draft.category = category; draft.color = category.color; draft.icon = category.icon
+        _draft = State(initialValue: draft); original = nil; entireSeries = false
+    }
     @MainActor init(occurrence: EventOccurrence, entireSeries: Bool, store: DaymarkStore) {
         original = occurrence; self.entireSeries = entireSeries
         _draft = State(initialValue: EventDraft(occurrence: occurrence, store: store, entireSeries: entireSeries))

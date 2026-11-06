@@ -1,43 +1,157 @@
 import SwiftUI
 
 struct TodayView: View {
-    @AppStorage("displayName") private var name = ""
+    @Environment(DaymarkStore.self) private var store
     @Environment(AppRoute.self) private var route
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("displayName") private var name = ""
+    @AppStorage("todaySectionOrder") private var orderRaw = TodaySection.allCases.map(\.rawValue).joined(separator: ",")
+    @AppStorage("todayHiddenSections") private var hiddenRaw = ""
     @State private var today = Date()
-    private var displayedDate: Date { route.journalDate ?? today }
+    @State private var openJournal = false
+    @State private var showCustomize = false
+    @State private var showEvent = false
+    @State private var showMilestone = false
+    @State private var showHabit = false
+    @State private var showNote = false
+    @State private var showAddJournal = false
+
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: today)
         return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
     }
+    private var journal: Journal? { store.journals.first { $0.id == route.journalID } ?? store.journals.first }
+    private var todayRange: DateInterval { Calendar.current.dateInterval(of: .day, for: today)! }
+    private var todayEvents: [EventOccurrence] { store.occurrences(in: todayRange).filter { !$0.completed } }
+    private var todayHabits: [Habit] { store.activeHabits.filter { store.isHabitScheduled($0, on: today) } }
+    private var completedHabits: Int { todayHabits.filter { store.isHabitComplete($0, on: today) }.count }
+    private var journalProgress: (done: Int, total: Int) {
+        guard let journal else { return (0, 0) }
+        return store.progress(journalID: journal.id, date: today)
+    }
+    private var visibleSections: [TodaySection] { TodayLayout.visible(orderRaw: orderRaw, hiddenRaw: hiddenRaw) }
+
     var body: some View {
-        JournalDayView(
-            date: displayedDate,
-            header: name.isEmpty ? greeting : "\(greeting), \(name)",
-            journalID: route.journalID,
-            focusedFieldID: route.focusedFieldID,
-            focusToken: route.navigationToken
-        )
-            .navigationTitle("Today").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if !Calendar.current.isDate(displayedDate, inSameDayAs: .now) {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Today") {
-                            route.journalID = nil; route.journalDate = nil; route.focusedFieldID = nil
-                            route.navigationToken += 1
-                            Feedback.tap()
-                        }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                header
+                Menu {
+                    Button("Journal entry", systemImage: "book.closed") { openTodayJournal() }
+                    Button("Calendar event", systemImage: "calendar.badge.plus") { showEvent = true }
+                    Button("Habit", systemImage: "leaf") { showHabit = true }
+                    Button("Reflection", systemImage: "square.and.pencil") { showNote = true }
+                    Button("Milestone", systemImage: "sparkles") { showMilestone = true }
+                } label: {
+                    Label("Capture a moment", systemImage: "plus").font(.headline)
+                        .frame(maxWidth: .infinity).padding(.vertical, 7)
+                }.buttonStyle(.borderedProminent).controlSize(.large)
+                    .accessibilityHint("Quickly add a journal entry, event, habit, reflection, or milestone")
+
+                if store.journals.isEmpty {
+                    EmptyCard(symbol: "book.closed", title: "Your story starts here", message: "Create a journal to begin recording your days.")
+                    Button("Create journal") { showAddJournal = true }.buttonStyle(.borderedProminent)
+                }
+
+                ForEach(visibleSections) { section in
+                    switch section {
+                    case .journal:
+                        TodayJournalCard(journal: journal, progress: journalProgress,
+                                         note: journal.flatMap { store.entry(journalID: $0.id, date: today)?.note } ?? "",
+                                         onOpen: openTodayJournal)
+                    case .schedule:
+                        TodayScheduleCard(events: todayEvents, onOpenCalendar: { route.selectedTab = 1 }, onOpenEvent: { occurrence in
+                            route.openEvent(occurrence.event.id, at: occurrence.start)
+                        })
+                    case .habits:
+                        TodayHabitsCard(habits: Array(todayHabits.prefix(3)), completed: completedHabits, total: todayHabits.count,
+                                        onOpenHabits: { route.selectedTab = 2 }, onToggle: { store.toggleHabit($0) })
+                    case .insights:
+                        TodayInsightsCard(store: store, today: today, onOpenInsights: { route.selectedTab = 4 })
                     }
                 }
+            }.padding(20).frame(maxWidth: 650).frame(maxWidth: .infinity)
+        }.pageBackground().navigationTitle("Today").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showCustomize = true } label: { Image(systemName: "slider.horizontal.3") }
+                        .accessibilityLabel("Customize Today")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { route.selectedTab = 4 } label: { Image(systemName: "person.crop.circle") }
-                        .accessibilityLabel("Preferences")
+                    Button { route.showSettings = true } label: { Image(systemName: "gearshape") }
+                        .accessibilityLabel("Settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("Calendar event", systemImage: "calendar.badge.plus") { showEvent = true }
+                        Button("Habit", systemImage: "leaf") { showHabit = true }
+                        Button("Reflection", systemImage: "square.and.pencil") { showNote = true }
+                    } label: { Image(systemName: "plus") }.accessibilityLabel("Quick add")
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in today = .now }
+            .navigationDestination(isPresented: $openJournal) {
+                JournalDayView(date: route.journalDate ?? today,
+                               header: name.isEmpty ? greeting : "\(greeting), \(name)",
+                               journalID: route.journalID,
+                               focusedFieldID: route.focusedFieldID,
+                               focusToken: route.navigationToken)
+                    .navigationTitle("Today").navigationBarTitleDisplayMode(.inline)
+            }
+            .sheet(isPresented: $showCustomize) { TodayCustomizeView() }
+            .sheet(isPresented: $showEvent) { EventEditor(date: today) }
+            .sheet(isPresented: $showMilestone) { EventEditor(date: today, category: .celebration) }
+            .sheet(isPresented: $showHabit) { HabitEditor() }
+            .sheet(isPresented: $showAddJournal) { JournalEditor() }
+            .sheet(isPresented: $showNote) {
+                if let journal {
+                    ReflectionEditor(journal: journal, date: today, initial: store.entry(journalID: journal.id, date: today)?.note ?? "")
+                }
+            }
+            .onAppear { handleRoute(); today = .now }
+            .onChange(of: route.navigationToken) { _, _ in handleRoute() }
+            .onChange(of: openJournal) { _, isOpen in
+                if !isOpen { route.journalDate = nil; route.focusedFieldID = nil; route.journalID = nil }
+            }
             .onChange(of: scenePhase) { _, phase in if phase == .active { today = .now } }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in today = .now }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text(today.formatted(.dateTime.weekday(.wide).month(.wide).day()).uppercased())
+                .font(.caption.weight(.semibold)).tracking(1.2).foregroundStyle(.secondary)
+            Text(name.isEmpty ? greeting : "\(greeting), \(name)")
+                .font(.largeTitle.weight(.bold)).fixedSize(horizontal: false, vertical: true)
+            Text(summary)
+                .font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 18) {
+                Label("\(todayEvents.count) event\(todayEvents.count == 1 ? "" : "s")", systemImage: "calendar")
+                Label("\(completedHabits)/\(todayHabits.count) habits", systemImage: "leaf")
+                Label(journalProgress.total == 0 ? "A fresh page" : "\(journalProgress.done)/\(journalProgress.total) journal", systemImage: "book.closed")
+            }.font(.caption).foregroundStyle(.secondary)
+        }.padding(.top, 8)
+    }
+
+    private var summary: String {
+        if store.journals.isEmpty { return "A quiet place to begin." }
+        if todayEvents.isEmpty && todayHabits.isEmpty && journalProgress.done == 0 { return "A wide-open day. Make a little room for what matters." }
+        if !todayEvents.isEmpty && !todayHabits.isEmpty { return "A day with a little structure and a little room to breathe." }
+        if !todayEvents.isEmpty { return "A few things on the calendar, and space between them." }
+        if !todayHabits.isEmpty { return "Small steps are waiting for you today." }
+        return "Your journal is here whenever you’re ready."
+    }
+
+    private func openTodayJournal() {
+        route.journalID = nil; route.journalDate = nil; route.focusedFieldID = nil
+        openJournal = true
+    }
+
+    private func handleRoute() {
+        guard route.selectedTab == 0 else { return }
+        guard route.journalDate != nil || route.focusedFieldID != nil || route.journalID != nil else { return }
+        openJournal = true
     }
 }
+
 
 struct JournalDayView: View {
     @Environment(DaymarkStore.self) private var store

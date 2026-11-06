@@ -23,6 +23,8 @@ struct EventOccurrence: Identifiable {
     var recurrences: [Recurrence] = []
     var exceptions: [EventException] = []
     var templates: [SavedTemplate] = []
+    var habits: [Habit] = []
+    var habitCompletions: [HabitCompletion] = []
     var errorMessage: String?
     var revision = 0
     let notifications = NotificationCoordinator()
@@ -49,6 +51,8 @@ struct EventOccurrence: Identifiable {
             recurrences = try context.fetch(FetchDescriptor<Recurrence>())
             exceptions = try context.fetch(FetchDescriptor<EventException>())
             templates = try context.fetch(FetchDescriptor<SavedTemplate>()).sorted { $0.title < $1.title }
+            habits = try context.fetch(FetchDescriptor<Habit>()).sorted { ($0.position, $0.createdAt) < ($1.position, $1.createdAt) }
+            habitCompletions = try context.fetch(FetchDescriptor<HabitCompletion>())
             revision += 1
         } catch { errorMessage = "Your data could not be loaded. \(error.localizedDescription)" }
     }
@@ -240,5 +244,6 @@ struct EventOccurrence: Identifiable {
     func reschedule() {
         guard notificationSchedulingEnabled else { return }
         notifications.reconcile(events: events, reminders: reminders, recurrences: recurrences, exceptions: exceptions)
+        HabitNotificationScheduler.sync(habits: habits)
     }
 }

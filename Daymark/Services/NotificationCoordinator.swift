@@ -135,7 +135,7 @@ struct PlannedNotification {
             waiting = nil
             await refreshPermission()
             let pending = await center.pendingNotificationRequests()
-            center.removePendingNotificationRequests(withIdentifiers: pending.filter { $0.identifier.hasPrefix("daymark/") }.map(\.identifier))
+            center.removePendingNotificationRequests(withIdentifiers: pending.filter { $0.identifier.hasPrefix("daymark/") && !$0.identifier.hasPrefix(HabitNotificationScheduler.prefix) }.map(\.identifier))
             queuedCount = 0; omittedCount = 0; lastScheduledDate = nil; lastError = nil
             guard authorization == .authorized || authorization == .provisional || authorization == .ephemeral else { continue }
             let selected = Array(plan.prefix(Self.capacity))
@@ -168,7 +168,9 @@ struct PlannedNotification {
     var journalID: UUID?
     var journalDate: Date?
     var focusedFieldID: UUID?
+    var habitID: UUID?
     var navigationToken = 0
+    var showSettings = false
 }
 
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {

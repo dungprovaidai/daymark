@@ -11,7 +11,7 @@ extension AppRoute {
         })
 
         switch components.host?.lowercased() {
-        case "today", "journal":
+        case "today":
             selectedTab = 0
             journalID = items["journal"].flatMap(UUID.init(uuidString:))
             journalDate = items["date"].flatMap { SharedDayKey.date(from: $0) }
@@ -28,8 +28,23 @@ extension AppRoute {
             selectedTab = 1
             if let value = items["date"], let date = SharedDayKey.date(from: value) { calendarDate = date }
             navigationToken += 1
-        case "settings":
+        case "habits":
+            selectedTab = 2
+            habitID = items["habit"].flatMap(UUID.init(uuidString:))
+            navigationToken += 1
+        case "journal":
+            selectedTab = 3
+            journalID = items["journal"].flatMap(UUID.init(uuidString:))
+            journalDate = items["date"].flatMap { SharedDayKey.date(from: $0) }
+            navigationToken += 1
+        case "insights":
             selectedTab = 4
+            navigationToken += 1
+        case "library":
+            selectedTab = 5
+            navigationToken += 1
+        case "settings":
+            showSettings = true
             navigationToken += 1
         default:
             break
