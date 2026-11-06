@@ -107,35 +107,25 @@ struct TodayView: View {
 
     private var dashboardSections: some View {
         ForEach(visibleSections) { section in
-            Group {
-                switch section {
-                case .journal:
-                    TodayJournalCard(
-                        journal: journal,
-                        progress: journalProgress,
-                        note: journal.flatMap { store.entry(journalID: $0.id, date: today)?.note } ?? "",
-                        onOpen: openTodayJournal
-                    )
-                case .schedule:
-                    TodayScheduleCard(
-                        events: todayEvents,
-                        onOpenCalendar: { route.selectedTab = 1 },
-                        onOpenEvent: { occurrence in
-                            route.openEvent(occurrence.event.id, at: occurrence.start)
-                        }
-                    )
-                case .habits:
-                    TodayHabitsCard(
-                        habits: Array(todayHabits.prefix(3)),
-                        completed: completedHabits,
-                        total: todayHabits.count,
-                        onOpenHabits: { route.selectedTab = 2 },
-                        onToggle: { store.toggleHabit($0) }
-                    )
-                case .insights:
-                    TodayInsightsCard(store: store, today: today, onOpenInsights: { route.selectedTab = 4 })
-                }
-            }
+            TodaySectionView(
+                section: section,
+                journal: journal,
+                journalProgress: journalProgress,
+                journalNote: journal.flatMap { store.entry(journalID: $0.id, date: today)?.note } ?? "",
+                todayEvents: todayEvents,
+                todayHabits: Array(todayHabits.prefix(3)),
+                completedHabits: completedHabits,
+                totalHabits: todayHabits.count,
+                today: today,
+                onOpenJournal: openTodayJournal,
+                onOpenCalendar: { route.selectedTab = 1 },
+                onOpenEvent: { occurrence in
+                    route.openEvent(occurrence.event.id, at: occurrence.start)
+                },
+                onOpenHabits: { route.selectedTab = 2 },
+                onToggleHabit: { store.toggleHabit($0) },
+                onOpenInsights: { route.selectedTab = 4 }
+            )
         }
     }
 
@@ -173,6 +163,44 @@ struct TodayView: View {
         guard route.selectedTab == 0 else { return }
         guard route.journalDate != nil || route.focusedFieldID != nil || route.journalID != nil else { return }
         openJournal = true
+    }
+}
+
+struct TodaySectionView: View {
+    let section: TodaySection
+    let journal: Journal?
+    let journalProgress: (done: Int, total: Int)
+    let journalNote: String
+    let todayEvents: [EventOccurrence]
+    let todayHabits: [Habit]
+    let completedHabits: Int
+    let totalHabits: Int
+    let today: Date
+    let onOpenJournal: () -> Void
+    let onOpenCalendar: () -> Void
+    let onOpenEvent: (EventOccurrence) -> Void
+    let onOpenHabits: () -> Void
+    let onToggleHabit: (Habit) -> Void
+    let onOpenInsights: () -> Void
+
+    @ViewBuilder
+    var body: some View {
+        switch section {
+        case .journal:
+            TodayJournalCard(journal: journal, progress: journalProgress, note: journalNote, onOpen: onOpenJournal)
+        case .schedule:
+            TodayScheduleCard(events: todayEvents, onOpenCalendar: onOpenCalendar, onOpenEvent: onOpenEvent)
+        case .habits:
+            TodayHabitsCard(
+                habits: todayHabits,
+                completed: completedHabits,
+                total: totalHabits,
+                onOpenHabits: onOpenHabits,
+                onToggle: onToggleHabit
+            )
+        case .insights:
+            TodayInsightsCard(today: today, onOpenInsights: onOpenInsights)
+        }
     }
 }
 
