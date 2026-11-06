@@ -131,3 +131,5 @@ enum WidgetSnapshotBuilder {
         )
     }
 }
+
+// Rebuild marker: habit widget snapshot fields prepared for CI.
