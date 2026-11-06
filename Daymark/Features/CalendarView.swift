@@ -92,6 +92,9 @@ struct CalendarView: View {
         }.pageBackground().navigationTitle("Calendar")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button { route.showSettings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { showJump = true } label: { Image(systemName: "calendar.badge.clock") }.accessibilityLabel("Jump to date")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -206,6 +209,9 @@ struct EventRow: View {
                             if !occurrence.event.location.isEmpty {
                                 Label(occurrence.event.location, systemImage: "location").font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             }
+                            if showDate, occurrence.start > .now, let countdown = EventFormatting.countdown(to: occurrence.start) {
+                                Text(countdown).font(.caption2.weight(.semibold)).foregroundStyle(Palette.accent)
+                            }
                             if occurrence.isRecurring { Label("Repeating", systemImage: "repeat").font(.caption2).foregroundStyle(.secondary) }
                         }.multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
@@ -222,6 +228,17 @@ struct EventRow: View {
 }
 
 enum EventFormatting {
+    static func countdown(to date: Date, from now: Date = .now) -> String? {
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
+        if days < 0 { return nil }
+        if days == 0 { return calendar.isDateInToday(date) ? "Today" : "Now" }
+        if days == 1 { return "Tomorrow" }
+        if days < 7 { return "In \(days) days" }
+        if days < 30 { return "In \(days / 7) week\(days / 7 == 1 ? "" : "s")" }
+        return "In \(days / 30) month\(days / 30 == 1 ? "" : "s")"
+    }
+
     static func interval(_ occurrence: EventOccurrence, includeDate: Bool = false) -> String {
         var cal = Calendar.current
         cal.timeZone = TimeZone(identifier: occurrence.event.timeZoneID) ?? .current

@@ -7,6 +7,7 @@ struct DaymarkWidgetBundle: WidgetBundle {
         DaymarkOverviewWidget()
         DaymarkAgendaWidget()
         DaymarkNextEventWidget()
+        DaymarkHabitsWidget()
         DaymarkLockScreenWidget()
     }
 }
@@ -52,6 +53,21 @@ struct DaymarkNextEventWidget: Widget {
         }
         .configurationDisplayName("Next event")
         .description("The next thing on your calendar, plus journal progress.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    }
+}
+
+struct DaymarkHabitsWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(
+            kind: DaymarkShared.kindHabits,
+            intent: DaymarkWidgetConfigurationIntent.self,
+            provider: DaymarkTimelineProvider(kind: DaymarkShared.kindHabits)
+        ) { entry in
+            DaymarkHabitWidgetView(entry: entry)
+        }
+        .configurationDisplayName("Habit progress")
+        .description("Today’s habits with quick check-ins and streaks.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

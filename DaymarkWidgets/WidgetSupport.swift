@@ -56,6 +56,11 @@ enum WidgetEntryFactory {
         if let reminder = entry.snapshot.reminders.first {
             candidates.append(reminder.fireDate.addingTimeInterval(60))
         }
+        if entry.kind == DaymarkShared.kindHabits, !entry.snapshot.habitItems.isEmpty,
+           let morning = Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: now),
+           morning > now {
+            candidates.append(morning)
+        }
         return candidates.filter { $0 > now }.min() ?? now.addingTimeInterval(30 * 60)
     }
 }

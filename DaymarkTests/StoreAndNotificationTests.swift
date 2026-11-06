@@ -4,7 +4,7 @@ import SwiftData
 
 @MainActor final class StoreAndNotificationTests: XCTestCase {
     private func makeStore() throws -> (ModelContainer, DaymarkStore) {
-        let schema = Schema([Journal.self, JournalSection.self, CustomField.self, JournalEntry.self, FieldValue.self, CalendarEvent.self, Reminder.self, Recurrence.self, EventException.self, SavedTemplate.self])
+        let schema = Schema([Journal.self, JournalSection.self, CustomField.self, JournalEntry.self, FieldValue.self, CalendarEvent.self, Reminder.self, Recurrence.self, EventException.self, SavedTemplate.self, Habit.self, HabitCompletion.self])
         let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)])
         return (container, DaymarkStore(context: container.mainContext, scheduleNotifications: false))
     }
@@ -108,5 +108,54 @@ import SwiftData
         XCTAssertEqual((json["values"] as? [[String: Any]])?.first?["text"] as? String, "=SUM(1,2)")
         let csv = String(decoding: DataExport.csv(store: store), as: UTF8.self)
         XCTAssertTrue(csv.contains("\"A, B\"")); XCTAssertTrue(csv.contains("\"'=SUM(1,2)\""))
+    }
+
+    func testHabitStreakCountsScheduledCompletedDays() throws {
+        let (_, store) = try makeStore()
+        let habit = Habit(name: "Read")
+        habit.startDate = Calendar.current.date(byAdding: .day, value: -4, to: .now)!
+        store.perform { store.context.insert(habit) }
+        let calendar = Calendar.current
+        for offset in [2, 1] {
+            let day = calendar.date(byAdding: .day, value: -offset, to: .now)!
+            XCTAssertTrue(store.setHabitProgress(habit, on: day, value: 1))
+        }
+        XCTAssertEqual(store.habitStats(habit).currentStreak, 2)
+        XCTAssertTrue(store.toggleHabit(habit))
+        XCTAssertEqual(store.habitStats(habit).currentStreak, 3)
+        XCTAssertEqual(store.habitStats(habit).completedToday, true)
+    }
+
+    func testBackupRoundTripRestoresJournalsEventsAndHabits() throws {
+        let (_, store) = try makeStore()
+        let journal = store.journals[0]
+        let habit = Habit(name: "Walk")
+        store.perform {
+            store.context.insert(habit)
+            let event = CalendarEvent(title: "Planning", start: .now.addingTimeInterval(3600), end: .now.addingTimeInterval(7200))
+            store.context.insert(event)
+        }
+        store.saveNote(journalID: journal.id, date: .now, note: "A real note")
+        store.setHabitProgress(habit, on: .now, value: 1)
+        let data = try DataExport.json(store: store)
+        let backup = try DataImport.decode(data)
+        try DataImport.apply(backup, store: store)
+        XCTAssertEqual(store.journals.count, 1)
+        XCTAssertEqual(store.entries.first?.note, "A real note")
+        XCTAssertEqual(store.events.count, 1)
+        XCTAssertEqual(store.habits.count, 1)
+        XCTAssertEqual(store.habitCompletions.count, 1)
+        XCTAssertEqual(store.habitCompletions.first?.completed, true)
+    }
+
+    func testBackupRejectsAFileWithMissingReferences() throws {
+        let (_, store) = try makeStore()
+        let data = try DataExport.json(store: store)
+        var object = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var fields = try XCTUnwrap(object["fields"] as? [[String: Any]])
+        fields.append(["id": UUID().uuidString, "journalID": UUID().uuidString, "title": "Broken", "kind": "text", "icon": "text", "color": "lavender", "position": 99, "unit": "", "step": 1, "target": 0, "ratingMaximum": 5, "options": [], "archived": false])
+        object["fields"] = fields
+        let malformed = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertThrowsError(try DataImport.decode(malformed))
     }
 }

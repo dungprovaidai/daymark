@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @Environment(DaymarkStore.self) private var store
+    @Environment(AppRoute.self) private var route
     @State private var addJournal = false
     @State private var editingJournal: Journal?
     @State private var deletingJournal: Journal?
@@ -55,6 +56,7 @@ struct LibraryView: View {
         }.navigationTitle("Library")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { EditButton() }
+                ToolbarItem(placement: .topBarTrailing) { Button { route.showSettings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Settings") }
                 ToolbarItem(placement: .topBarTrailing) { Button { addJournal = true } label: { Image(systemName: "plus") }.accessibilityLabel("New journal") }
             }
             .sheet(isPresented: $addJournal) { JournalEditor() }

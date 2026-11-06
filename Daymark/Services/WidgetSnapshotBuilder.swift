@@ -75,6 +75,28 @@ enum WidgetSnapshotBuilder {
             )
         }
 
+        let habitInfos = store.activeHabits
+            .filter { store.isHabitScheduled($0, on: today) }
+            .prefix(6)
+            .map { habit -> WidgetHabitInfo in
+                let stats = store.habitStats(habit, now: today)
+                return WidgetHabitInfo(
+                    id: habit.id,
+                    name: habit.name,
+                    icon: habit.icon,
+                    color: habit.color,
+                    completed: stats.completedToday,
+                    value: stats.todayValue,
+                    target: max(0.0001, stats.todayTarget),
+                    unit: habit.unit,
+                    periodProgress: stats.periodProgress,
+                    periodTarget: max(1, stats.periodTarget),
+                    periodLabel: stats.periodLabel,
+                    streak: stats.currentStreak,
+                    frequency: habit.frequencyRaw
+                )
+            }
+
         return WidgetSnapshot(
             generatedAt: now,
             displayName: UserDefaults.standard.string(forKey: "displayName") ?? "",
@@ -86,7 +108,8 @@ enum WidgetSnapshotBuilder {
             upcoming: future.prefix(6).map(eventInfo),
             reminders: Array(reminders),
             checklist: checklist,
-            notificationsEnabled: store.notifications.canDeliver
+            notificationsEnabled: store.notifications.canDeliver,
+            habits: Array(habitInfos)
         )
     }
 

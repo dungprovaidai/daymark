@@ -92,6 +92,7 @@ struct RootView: View {
 
     @MainActor private func activate() async {
         store.applyPendingWidgetActions()
+        store.applyPendingHabitActions()
         await store.notifications.refreshPermission()
         store.reschedule()
         store.syncWidgetSnapshot()

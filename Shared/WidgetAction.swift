@@ -55,3 +55,51 @@ enum WidgetActionStore {
         try? data.write(to: DaymarkShared.actionsURL, options: .atomic)
     }
 }
+
+struct WidgetHabitAction: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var habitID: UUID
+    var dayKey: String
+    var value: Bool
+    var valueAmount: Double?
+    var createdAt = Date()
+}
+
+enum WidgetHabitActionStore {
+    static func enqueue(_ action: WidgetHabitAction) {
+        WidgetFileLock.withLock {
+            var actions = readUnlocked()
+            if !actions.contains(where: { $0.id == action.id }) {
+                actions.append(action)
+                writeUnlocked(actions)
+            }
+        }
+    }
+
+    static func pending() -> [WidgetHabitAction] {
+        WidgetFileLock.withLock { readUnlocked() }
+    }
+
+    static func remove(ids: Set<UUID>) {
+        guard !ids.isEmpty else { return }
+        WidgetFileLock.withLock {
+            let remaining = readUnlocked().filter { !ids.contains($0.id) }
+            writeUnlocked(remaining)
+        }
+    }
+
+    private static func readUnlocked() -> [WidgetHabitAction] {
+        guard let data = try? Data(contentsOf: DaymarkShared.habitActionsURL) else { return [] }
+        return (try? JSONDecoder().decode([WidgetHabitAction].self, from: data)) ?? []
+    }
+
+    private static func writeUnlocked(_ actions: [WidgetHabitAction]) {
+        DaymarkShared.ensureDirectory()
+        if actions.isEmpty {
+            try? FileManager.default.removeItem(at: DaymarkShared.habitActionsURL)
+            return
+        }
+        guard let data = try? JSONEncoder().encode(actions) else { return }
+        try? data.write(to: DaymarkShared.habitActionsURL, options: .atomic)
+    }
+}

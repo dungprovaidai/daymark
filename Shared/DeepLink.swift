@@ -40,6 +40,16 @@ enum DaymarkDeepLink {
     static var settings: URL {
         URL(string: "daymark://settings")!
     }
+
+    static func habits(habitID: UUID? = nil) -> URL {
+        var components = URLComponents()
+        components.scheme = DaymarkShared.urlScheme
+        components.host = "habits"
+        if let habitID {
+            components.queryItems = [URLQueryItem(name: "habit", value: habitID.uuidString)]
+        }
+        return components.url ?? URL(string: "daymark://habits")!
+    }
 }
 
 extension WidgetEventInfo {

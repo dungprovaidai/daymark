@@ -18,6 +18,7 @@ struct InsightPoint: Identifiable {
 
 struct InsightsView: View {
     @Environment(DaymarkStore.self) private var store
+    @Environment(AppRoute.self) private var route
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var period = InsightPeriod.week
     @State private var anchor = Date()
@@ -81,6 +82,26 @@ struct InsightsView: View {
                     statistic("Recorded days", value: "\(Set(entries.map(\.dayKey)).count)", icon: "calendar", color: "lavender")
                     statistic("Current streak", value: "\(currentStreak) days", icon: "flame", color: "amber")
                 }
+                if !store.activeHabits.isEmpty {
+                    SectionHeading(title: "Habits", subtitle: "How your small steps are adding up.")
+                    Surface {
+                        VStack(spacing: 14) {
+                            ForEach(store.activeHabits) { habit in
+                                let stats = store.habitStats(habit)
+                                HStack(spacing: 12) {
+                                    SymbolTile(symbol: habit.icon, color: Palette.color(habit.color))
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(habit.name).font(.subheadline.weight(.medium))
+                                        Text("\(stats.currentStreak) day streak · \(Int((stats.completionRate * 100).rounded()))% complete")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text("\(stats.periodProgress)/\(stats.periodTarget)").font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(Palette.color(habit.color))
+                                }
+                            }
+                        }
+                    }
+                }
                 if let primary {
                     Surface {
                         VStack(alignment: .leading, spacing: 18) {
@@ -143,6 +164,11 @@ struct InsightsView: View {
                 }
             }.padding(20).frame(maxWidth: 650).frame(maxWidth: .infinity)
         }.pageBackground().navigationTitle("Insights")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { route.showSettings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Settings")
+                }
+            }
             .onChange(of: period) { _, _ in selectedDate = nil }
     }
     private var dailyChart: some View {

@@ -18,7 +18,7 @@ struct ExportDocument: FileDocument {
         func date(_ value: Date) -> String { value.ISO8601Format() }
         func optional(_ value: UUID?) -> Any { value.map { $0.uuidString as Any } ?? NSNull() }
         let object: [String: Any] = [
-            "format": "Daymark", "schemaVersion": 1, "exportedAt": date(.now),
+            "format": "Daymark", "schemaVersion": 2, "exportedAt": date(.now),
             "preferences": ["displayName": UserDefaults.standard.string(forKey: "displayName") ?? "", "appearance": UserDefaults.standard.string(forKey: "appearance") ?? "system", "haptics": UserDefaults.standard.object(forKey: "haptics") as? Bool ?? true],
             "journals": store.journals.map { ["id": $0.id.uuidString, "title": $0.title, "icon": $0.icon, "color": $0.color, "position": $0.position, "createdAt": date($0.createdAt)] as [String: Any] },
             "sections": store.sections.map { ["id": $0.id.uuidString, "journalID": $0.journalID.uuidString, "title": $0.title, "position": $0.position] as [String: Any] },
@@ -40,7 +40,16 @@ struct ExportDocument: FileDocument {
             "reminders": store.reminders.map { ["id": $0.id.uuidString, "eventID": $0.eventID.uuidString, "amount": $0.amount, "unit": $0.unitRaw] as [String: Any] },
             "recurrences": store.recurrences.map { ["id": $0.id.uuidString, "eventID": $0.eventID.uuidString, "frequency": $0.frequencyRaw, "interval": $0.interval, "weekdays": $0.weekdays, "until": $0.until.map { date($0) as Any } ?? NSNull()] as [String: Any] },
             "exceptions": store.exceptions.map { ["id": $0.id.uuidString, "key": $0.key, "eventID": $0.eventID.uuidString, "originalStart": date($0.originalStart), "cancelled": $0.cancelled, "completed": $0.completed, "replacementID": optional($0.replacementID)] as [String: Any] },
-            "templates": store.templates.map { ["id": $0.id.uuidString, "title": $0.title, "definition": (try? JSONSerialization.jsonObject(with: $0.payload)) ?? NSNull()] as [String: Any] }
+            "templates": store.templates.map { ["id": $0.id.uuidString, "title": $0.title, "definition": (try? JSONSerialization.jsonObject(with: $0.payload)) ?? NSNull()] as [String: Any] },
+            "habits": store.habits.map { habit -> [String: Any] in
+                ["id": habit.id.uuidString, "name": habit.name, "details": habit.details, "icon": habit.icon, "color": habit.color,
+                 "kind": habit.kindRaw, "target": habit.target, "step": habit.step, "unit": habit.unit,
+                 "frequency": habit.frequencyRaw, "weekdays": habit.weekdays, "periodTarget": habit.periodTarget,
+                 "reminderEnabled": habit.reminderEnabled, "reminderHour": habit.reminderHour, "reminderMinute": habit.reminderMinute,
+                 "startDate": date(habit.startDate), "endDate": habit.endDate.map { date($0) as Any } ?? NSNull(),
+                 "archived": habit.archived, "position": habit.position, "createdAt": date(habit.createdAt), "updatedAt": date(habit.updatedAt)]
+            },
+            "habitCompletions": store.habitCompletions.map { ["id": $0.id.uuidString, "key": $0.key, "habitID": $0.habitID.uuidString, "dayKey": $0.dayKey, "date": date($0.date), "value": $0.value, "completed": $0.completed, "updatedAt": date($0.updatedAt)] as [String: Any] }
         ]
         return try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
     }

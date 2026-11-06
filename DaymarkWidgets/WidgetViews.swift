@@ -352,6 +352,130 @@ struct DaymarkWidgetView: View {
     }
 }
 
+struct DaymarkHabitWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
+    let entry: DaymarkWidgetEntry
+
+    private var accent: Color { WidgetPalette.accent(colorScheme) }
+    private var habitsLink: URL { DaymarkDeepLink.habits() }
+    private var habits: [WidgetHabitInfo] { entry.snapshot.habitItems }
+
+    var body: some View {
+        Group {
+            if habits.isEmpty {
+                emptyState
+            } else {
+                switch family {
+                case .systemSmall:
+                    habitList(limit: 2, compact: true)
+                case .systemMedium:
+                    habitList(limit: 3, compact: true)
+                default:
+                    habitList(limit: 5, compact: false)
+                }
+            }
+        }
+        .containerBackground(for: .widget) { DaymarkWidgetBackground() }
+        .widgetURL(habitsLink)
+    }
+
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: "leaf.fill").font(.title2).foregroundStyle(accent)
+            Text("No habits today").font(.headline)
+            Text("Open Daymark to add a gentle habit.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(4)
+    }
+
+    private func habitList(limit: Int, compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: compact ? 7 : 9) {
+            HStack {
+                Text("Habits".uppercased())
+                    .font(.system(size: 8, weight: .semibold)).tracking(0.6)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(WidgetFormat.monthDay(entry.date))
+                    .font(.system(size: 9)).foregroundStyle(.secondary)
+            }
+            ForEach(Array(habits.prefix(limit))) { habit in
+                HStack(spacing: 8) {
+                    Image(systemName: habit.icon)
+                        .font(.system(size: compact ? 11 : 13))
+                        .foregroundStyle(WidgetPalette.color(habit.color, scheme: colorScheme))
+                        .frame(width: 20)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(habit.name)
+                            .font(.system(size: compact ? 11 : 12, weight: .medium))
+                            .foregroundStyle(habit.completed ? .secondary : .primary)
+                            .strikethrough(habit.completed)
+                            .lineLimit(1)
+                        HStack(spacing: 5) {
+                            Text(progressText(habit))
+                            if habit.streak > 0 {
+                                Label("\(habit.streak)", systemImage: "flame.fill")
+                            }
+                        }
+                        .font(.system(size: 8))
+                        .foregroundStyle(.secondary)
+                        if formatPercent(habit) > 0 {
+                            ProgressView(value: formatPercent(habit)).tint(WidgetPalette.color(habit.color, scheme: colorScheme))
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    Button(intent: ToggleHabitIntent(
+                        habitID: habit.id,
+                        dayKey: entry.snapshot.todayDayKey,
+                        completed: habit.completed
+                    )) {
+                        Image(systemName: habit.completed ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: compact ? 18 : 22))
+                            .foregroundStyle(habit.completed ? WidgetPalette.color("mint", scheme: colorScheme) : accent.opacity(0.65))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(habit.name)
+                    .accessibilityValue(habit.completed ? "Completed" : "Not completed")
+                }
+                .contentShape(Rectangle())
+            }
+            if !compact {
+                Spacer(minLength: 0)
+                Link(destination: habitsLink) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "leaf.fill").font(.system(size: 9))
+                        Text("Open habits").font(.system(size: 9, weight: .medium))
+                    }
+                    .foregroundStyle(accent)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(compact && family == .systemSmall ? 2 : 4)
+    }
+
+    private func formatPercent(_ habit: WidgetHabitInfo) -> Double {
+        habit.fraction
+    }
+
+    private func progressText(_ habit: WidgetHabitInfo) -> String {
+        if habit.frequency == "weekly" || habit.frequency == "monthly" {
+            return "\(habit.periodProgress)/\(habit.periodTarget) · \(habit.periodLabel.lowercased())"
+        }
+        if habit.target > 1 || !habit.unit.isEmpty {
+            return "\(formatNumber(habit.value))/\(formatNumber(habit.target)) \(habit.unit)".trimmingCharacters(in: .whitespaces)
+        }
+        return habit.completed ? "Done" : "Today"
+    }
+
+    private func formatNumber(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(Int(value))
+            : String(format: "%.1f", value)
+    }
+}
+
 struct DaymarkLockScreenView: View {
     @Environment(\.widgetFamily) private var family
     @Environment(\.colorScheme) private var colorScheme

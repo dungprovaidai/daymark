@@ -164,3 +164,50 @@ struct ToggleChecklistIntent: AppIntent {
         return .result()
     }
 }
+
+struct ToggleHabitIntent: AppIntent {
+    static var title: LocalizedStringResource = "Update habit"
+    static var description = IntentDescription("Marks a Daymark habit complete or incomplete for today.")
+
+    @Parameter(title: "Habit ID")
+    var habitID: String
+
+    @Parameter(title: "Day")
+    var dayKey: String
+
+    @Parameter(title: "Currently complete")
+    var completed: Bool
+
+    init() { }
+
+    init(habitID: UUID, dayKey: String, completed: Bool) {
+        self.habitID = habitID.uuidString
+        self.dayKey = dayKey
+        self.completed = completed
+    }
+
+    func perform() async throws -> some IntentResult {
+        guard let habit = UUID(uuidString: habitID) else {
+            return .result()
+        }
+        let newValue = !completed
+        WidgetSnapshotStore.update { snapshot in
+            guard var habits = snapshot.habits,
+                  let index = habits.firstIndex(where: { $0.id == habit }) else { return }
+            let wasCompleted = habits[index].completed
+            habits[index].completed = newValue
+            habits[index].value = newValue ? max(0.01, habits[index].target) : 0
+            if wasCompleted != newValue {
+                habits[index].periodProgress = max(0, habits[index].periodProgress + (newValue ? 1 : -1))
+            }
+            snapshot.habits = habits
+        }
+        WidgetHabitActionStore.enqueue(WidgetHabitAction(
+            habitID: habit,
+            dayKey: dayKey,
+            value: newValue
+        ))
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}

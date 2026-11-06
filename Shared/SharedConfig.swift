@@ -14,12 +14,14 @@ enum DaymarkShared {
 
     static let snapshotFileName = "WidgetSnapshot.json"
     static let actionsFileName = "WidgetActions.json"
+    static let habitActionsFileName = "WidgetHabitActions.json"
     static let lockFileName = "WidgetShared.lock"
     static let fallbackDirectoryName = "DaymarkWidgetShared"
 
     static let kindOverview = "DaymarkOverviewWidget"
     static let kindAgenda = "DaymarkAgendaWidget"
     static let kindNextEvent = "DaymarkNextEventWidget"
+    static let kindHabits = "DaymarkHabitsWidget"
     static let kindLockScreen = "DaymarkLockScreenWidget"
 
     static var appGroupURL: URL? {
@@ -38,6 +40,7 @@ enum DaymarkShared {
 
     static var snapshotURL: URL { directoryURL.appendingPathComponent(snapshotFileName) }
     static var actionsURL: URL { directoryURL.appendingPathComponent(actionsFileName) }
+    static var habitActionsURL: URL { directoryURL.appendingPathComponent(habitActionsFileName) }
     static var lockURL: URL { directoryURL.appendingPathComponent(lockFileName) }
 
     static var isAppGroupAvailable: Bool { appGroupURL != nil }

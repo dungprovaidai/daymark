@@ -3,6 +3,8 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(DaymarkStore.self) private var store
+    @Environment(AppLockController.self) private var lock
+    @Environment(\.dismiss) private var dismiss
     @AppStorage("displayName") private var name = ""
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage("haptics") private var haptics = true
@@ -10,6 +12,13 @@ struct SettingsView: View {
     @State private var exportType = UTType.json
     @State private var showExporter = false
     @State private var exportError: String?
+    @State private var showImporter = false
+    @State private var pendingBackup: DaymarkBackup?
+    @State private var showRestoreConfirm = false
+    @State private var importAlertTitle = ""
+    @State private var importAlertMessage = ""
+    @State private var showImportAlert = false
+    @State private var lockBusy = false
     var body: some View {
         List {
             Section {
@@ -39,10 +48,31 @@ struct SettingsView: View {
             }
             Section {
                 Button { export(as: .json) } label: { Label("Export all data (JSON)", systemImage: "square.and.arrow.up") }
+                Button { showImporter = true } label: { Label("Restore from JSON backup", systemImage: "arrow.down.doc") }
                 Button { export(as: .commaSeparatedText) } label: { Label("Export journal records (CSV)", systemImage: "tablecells") }
                 NavigationLink { PrivacyView() } label: { Label("Data & privacy", systemImage: "lock.shield") }
             } header: { Text("Your data") } footer: {
-                Text("JSON includes journals, fields, entries, events, reminders, repeat rules, exceptions, and templates. CSV is for journal analysis in spreadsheets.")
+                Text("JSON includes journals, fields, entries, events, reminders, repeat rules, exceptions, habits, check-ins, and templates. Restoring a backup validates the file first and asks before replacing local data. CSV is for journal analysis in spreadsheets.")
+            }
+            Section {
+                Toggle(isOn: Binding(
+                    get: { lock.isEnabled },
+                    set: { enabled in
+                        guard !lockBusy else { return }
+                        lockBusy = true
+                        Task {
+                            _ = await lock.setEnabled(enabled)
+                            lockBusy = false
+                        }
+                    }
+                )) {
+                    Label("App lock", systemImage: lock.isEnabled ? "lock.shield.fill" : "lock.shield")
+                }
+                .disabled(lockBusy || lock.isAuthenticating)
+                if lockBusy || lock.isAuthenticating { ProgressView().controlSize(.small) }
+                if let error = lock.errorMessage { Text(error).font(.caption).foregroundStyle(.red) }
+            } header: { Text("Privacy") } footer: {
+                Text("When enabled, Daymark asks for \(lock.biometryDescription) after you leave the app. Authentication happens on this device; Daymark never receives your biometric data. If device authentication is unavailable, the app stays unlocked so you are not trapped outside your records.")
             }
             Section {
                 NavigationLink { AboutView() } label: { Label("About Daymark", systemImage: "info.circle") }
@@ -56,19 +86,71 @@ struct SettingsView: View {
             }.listRowBackground(Palette.accent.opacity(0.05))
         }.navigationTitle("Settings")
             .task { await store.notifications.refreshPermission() }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
             .fileExporter(isPresented: $showExporter, document: document, contentType: exportType,
                           defaultFilename: "Daymark-\(DayKey.string(.now))") { result in
                 if case .failure(let error) = result { exportError = error.localizedDescription }
             }
+            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+                handleImport(result)
+            }
+            .confirmationDialog("Replace everything in Daymark?", isPresented: $showRestoreConfirm, titleVisibility: .visible) {
+                Button("Restore backup", role: .destructive) { applyPendingBackup() }
+                Button("Cancel", role: .cancel) { pendingBackup = nil }
+            } message: {
+                Text("This restores \(pendingBackup?.summary.line ?? "the selected backup") and replaces the data currently in Daymark. Your current data will not remain afterward.")
+            }
+            .alert(importAlertTitle, isPresented: $showImportAlert) {
+                Button("OK") { showImportAlert = false }
+            } message: { Text(importAlertMessage) }
             .alert("Export could not be completed", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
                 Button("OK") { exportError = nil }
             } message: { Text(exportError ?? "") }
     }
+
     private func export(as type: UTType) {
         do {
             document = ExportDocument(data: type == .json ? try DataExport.json(store: store) : DataExport.csv(store: store))
             exportType = type; showExporter = true
         } catch { exportError = error.localizedDescription }
+    }
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            showImportAlert("Import failed", error.localizedDescription)
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            let access = url.startAccessingSecurityScopedResource()
+            defer { if access { url.stopAccessingSecurityScopedResource() } }
+            do {
+                let data = try Data(contentsOf: url)
+                let backup = try DataImport.decode(data)
+                pendingBackup = backup
+                showRestoreConfirm = true
+            } catch {
+                showImportAlert("Import failed", error.localizedDescription)
+            }
+        }
+    }
+
+    private func applyPendingBackup() {
+        guard let backup = pendingBackup else { return }
+        do {
+            try DataImport.apply(backup, store: store)
+            pendingBackup = nil
+            showImportAlert("Backup restored", "Daymark now contains the data from your backup. You can export it again at any time.")
+        } catch {
+            showImportAlert("Restore failed", error.localizedDescription)
+        }
+    }
+
+    private func showImportAlert(_ title: String, _ message: String) {
+        importAlertTitle = title
+        importAlertMessage = message
+        showImportAlert = true
     }
 }
 
