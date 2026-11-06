@@ -33,44 +33,14 @@ struct TodayView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            LazyVStack(alignment: .leading, spacing: 22, pinnedViews: []) {
                 header
-                Menu {
-                    Button("Journal entry", systemImage: "book.closed") { openTodayJournal() }
-                    Button("Calendar event", systemImage: "calendar.badge.plus") { showEvent = true }
-                    Button("Habit", systemImage: "leaf") { showHabit = true }
-                    Button("Reflection", systemImage: "square.and.pencil") { showNote = true }
-                    Button("Milestone", systemImage: "sparkles") { showMilestone = true }
-                } label: {
-                    Label("Capture a moment", systemImage: "plus").font(.headline)
-                        .frame(maxWidth: .infinity).padding(.vertical, 7)
-                }.buttonStyle(.borderedProminent).controlSize(.large)
-                    .accessibilityHint("Quickly add a journal entry, event, habit, reflection, or milestone")
-
+                quickCapture
                 if store.journals.isEmpty {
                     EmptyCard(symbol: "book.closed", title: "Your story starts here", message: "Create a journal to begin recording your days.")
                     Button("Create journal") { showAddJournal = true }.buttonStyle(.borderedProminent)
                 }
-
-                ForEach(visibleSections) { section in
-                    Group {
-                        switch section {
-                        case .journal:
-                            TodayJournalCard(journal: journal, progress: journalProgress,
-                                             note: journal.flatMap { store.entry(journalID: $0.id, date: today)?.note } ?? "",
-                                             onOpen: openTodayJournal)
-                        case .schedule:
-                            TodayScheduleCard(events: todayEvents, onOpenCalendar: { route.selectedTab = 1 }, onOpenEvent: { occurrence in
-                                route.openEvent(occurrence.event.id, at: occurrence.start)
-                            })
-                        case .habits:
-                            TodayHabitsCard(habits: Array(todayHabits.prefix(3)), completed: completedHabits, total: todayHabits.count,
-                                            onOpenHabits: { route.selectedTab = 2 }, onToggle: { store.toggleHabit($0) })
-                        case .insights:
-                            TodayInsightsCard(store: store, today: today, onOpenInsights: { route.selectedTab = 4 })
-                        }
-                    }
-                }
+                dashboardSections
             }.padding(20).frame(maxWidth: 650).frame(maxWidth: .infinity)
         }.pageBackground().navigationTitle("Today").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -115,6 +85,57 @@ struct TodayView: View {
             }
             .onChange(of: scenePhase) { _, phase in if phase == .active { today = .now } }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in today = .now }
+    }
+
+    private var quickCapture: some View {
+        Menu {
+            Button("Journal entry", systemImage: "book.closed") { openTodayJournal() }
+            Button("Calendar event", systemImage: "calendar.badge.plus") { showEvent = true }
+            Button("Habit", systemImage: "leaf") { showHabit = true }
+            Button("Reflection", systemImage: "square.and.pencil") { showNote = true }
+            Button("Milestone", systemImage: "sparkles") { showMilestone = true }
+        } label: {
+            Label("Capture a moment", systemImage: "plus")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .accessibilityHint("Quickly add a journal entry, event, habit, reflection, or milestone")
+    }
+
+    @ViewBuilder
+    private var dashboardSections: some View {
+        ForEach(visibleSections) { section in
+            switch section {
+            case .journal:
+                TodayJournalCard(
+                    journal: journal,
+                    progress: journalProgress,
+                    note: journal.flatMap { store.entry(journalID: $0.id, date: today)?.note } ?? "",
+                    onOpen: openTodayJournal
+                )
+            case .schedule:
+                TodayScheduleCard(
+                    events: todayEvents,
+                    onOpenCalendar: { route.selectedTab = 1 },
+                    onOpenEvent: { occurrence in
+                        route.openEvent(occurrence.event.id, at: occurrence.start)
+                    }
+                )
+            case .habits:
+                TodayHabitsCard(
+                    habits: Array(todayHabits.prefix(3)),
+                    completed: completedHabits,
+                    total: todayHabits.count,
+                    onOpenHabits: { route.selectedTab = 2 },
+                    onToggle: { store.toggleHabit($0) }
+                )
+            case .insights:
+                TodayInsightsCard(store: store, today: today, onOpenInsights: { route.selectedTab = 4 })
+            }
+        }
     }
 
     private var header: some View {
