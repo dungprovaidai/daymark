@@ -7,6 +7,7 @@ struct MoodAnalysisResult: Codable, Equatable {
     var summary: String
 }
 
+@MainActor
 enum AIMoodAnalysisService {
     static let allowedMoods = ["calm", "good", "great", "neutral", "low", "anxious", "tired", "overwhelmed", "grateful", "inspired"]
 
