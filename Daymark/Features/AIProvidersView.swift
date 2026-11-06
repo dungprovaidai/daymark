@@ -51,9 +51,9 @@ struct AIProvidersView: View {
             }
 
             Section("Presets") {
-                presetButton(title: "OpenAI-compatible", subtitle: "Fill only the Base URL. Enter your model manually.", protocol: .openAICompatible, baseURL: "https://api.openai.com/v1")
-                presetButton(title: "Google Gemini", subtitle: "Native Gemini API format. Enter your model manually.", protocol: .geminiNative, baseURL: "https://generativelanguage.googleapis.com/v1beta")
-                presetButton(title: "Local OpenAI-compatible", subtitle: "For local servers such as Ollama-style endpoints.", protocol: .openAICompatible, baseURL: "http://localhost:11434")
+                presetButton(title: "OpenAI-compatible", subtitle: "Fill only the Base URL. Enter your model manually.", protocolType: .openAICompatible, baseURL: "https://api.openai.com/v1")
+                presetButton(title: "Google Gemini", subtitle: "Native Gemini API format. Enter your model manually.", protocolType: .geminiNative, baseURL: "https://generativelanguage.googleapis.com/v1beta")
+                presetButton(title: "Local OpenAI-compatible", subtitle: "For local servers such as Ollama-style endpoints.", protocolType: .openAICompatible, baseURL: "http://localhost:11434")
             }
         }
         .navigationTitle("Daymark AI")
@@ -111,12 +111,12 @@ struct AIProvidersView: View {
         .padding(.vertical, 4)
     }
 
-    private func presetButton(title: String, subtitle: String, protocol: AIProtocolType, baseURL: String) -> some View {
+    private func presetButton(title: String, subtitle: String, protocolType: AIProtocolType, baseURL: String) -> some View {
         Button {
             let provider = AIProviderConfiguration(displayName: title)
             provider.baseURLString = baseURL
-            provider.protocolRaw = protocol.rawValue
-            provider.endpointModeRaw = protocol == .openAICompatible ? AIEndpointMode.v1AlreadyIncluded.rawValue : provider.endpointModeRaw
+            provider.protocolRaw = protocolType.rawValue
+            provider.endpointModeRaw = protocolType == .openAICompatible ? AIEndpointMode.v1AlreadyIncluded.rawValue : provider.endpointModeRaw
             editingProvider = provider
         } label: {
             VStack(alignment: .leading, spacing: 3) {

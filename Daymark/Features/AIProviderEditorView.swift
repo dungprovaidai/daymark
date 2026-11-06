@@ -57,7 +57,7 @@ struct AIProviderEditorView: View {
         _customChatPath = State(initialValue: provider?.customChatPath ?? "")
         _customTextPath = State(initialValue: provider?.customTextPath ?? "")
         _customAdapterName = State(initialValue: provider?.customAdapterName ?? "")
-        let capability = provider.flatMap { storeModelCapability(provider: $0) } ?? AIModelCapability()
+        let capability = AIModelCapability()
         _supportsStreaming = State(initialValue: capability.supportsStreaming)
         _supportsJSONMode = State(initialValue: capability.supportsJSONMode)
         _supportsTools = State(initialValue: capability.supportsTools)
@@ -66,12 +66,8 @@ struct AIProviderEditorView: View {
         _contextLength = State(initialValue: capability.contextLength)
     }
 
-    private static func storeModelCapability(provider: AIProviderConfiguration) -> AIModelCapability? {
-        // The editor initializes before the store environment is available, so
-        // capabilities are reloaded in onAppear from DaymarkStore.
-        _ = provider
-        return nil
-    }
+    // Capabilities are loaded in onAppear from DaymarkStore because SwiftUI
+    // state initialization runs before environment values are available.
 
     private var isNew: Bool { provider == nil }
 

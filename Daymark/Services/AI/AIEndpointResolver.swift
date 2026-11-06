@@ -155,11 +155,11 @@ struct AIRequestBuilder {
         guard !model.isEmpty else { throw AIError.missingModelID }
         switch configuration.protocolType {
         case .openAICompatible:
-            return openAIRequest(baseURL: baseURL, model: model)
+            return try openAIRequest(baseURL: baseURL, model: model)
         case .geminiNative:
-            return geminiRequest(baseURL: baseURL, model: model)
+            return try geminiRequest(baseURL: baseURL, model: model)
         case .customAdapter:
-            return customRequest(baseURL: baseURL, model: model)
+            return try customRequest(baseURL: baseURL, model: model)
         }
     }
 

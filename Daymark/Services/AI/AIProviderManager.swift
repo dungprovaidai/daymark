@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 struct AIProviderManager {
     let store: DaymarkStore
     init(store: DaymarkStore) { self.store = store }
