@@ -5,3 +5,7 @@ build/
 xcuserdata/
 *.xcresult
 .build/
+
+Daymark-unsigned-ipa-artifact.zip
+Daymark-unsigned-ipa-download/
+
