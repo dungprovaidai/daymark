@@ -7,6 +7,24 @@ struct LibraryView: View {
     @State private var editingJournal: Journal?
     @State private var deletingJournal: Journal?
     @State private var templates = false
+    @State private var searchText = ""
+    @State private var selectedMilestone: EventOccurrence?
+    @State private var showMilestone = false
+
+    private var visibleJournals: [Journal] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return store.journals }
+        return store.journals.filter { $0.title.lowercased().contains(query) }
+    }
+
+    private var milestones: [EventOccurrence] {
+        let end = Calendar.current.date(byAdding: .year, value: 2, to: .now) ?? .now
+        return store
+            .occurrences(in: DateInterval(start: .now, end: end))
+            .filter { $0.event.category == .celebration && !$0.completed && $0.start > .now }
+            .sorted { $0.start < $1.start }
+    }
+
     var body: some View {
         List {
             Section {
@@ -16,7 +34,7 @@ struct LibraryView: View {
                 }.padding(.vertical, 12).listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
             }
             Section("Your journals") {
-                ForEach(store.journals) { journal in
+                ForEach(visibleJournals) { journal in
                     NavigationLink { JournalLibraryView(journal: journal) } label: {
                         HStack(spacing: 14) {
                             SymbolTile(symbol: journal.icon, color: Palette.color(journal.color))
@@ -53,7 +71,32 @@ struct LibraryView: View {
                     }.padding(.vertical, 6)
                 }
             } footer: { Text("Templates add configurable fields. They never create sample journal records.") }
-        }.navigationTitle("Library")
+
+            Section("Milestones") {
+                if milestones.isEmpty {
+                    Text("No milestones yet. Add a celebration to see it here with its countdown.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                } else {
+                    ForEach(milestones) { occurrence in
+                        EventRow(occurrence: occurrence, showDate: true) { selectedMilestone = occurrence }
+                    }
+                }
+                Button {
+                    showMilestone = true
+                } label: {
+                    Label("Add a milestone", systemImage: "sparkles")
+                }
+            }
+
+            Section("Archive") {
+                NavigationLink {
+                    ArchivedHabitsView()
+                } label: {
+                    Label("Archived habits", systemImage: "archivebox")
+                }
+            }
+        }.searchable(text: $searchText, prompt: "Search journals")
+            .navigationTitle("Library")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { EditButton() }
                 ToolbarItem(placement: .topBarTrailing) { Button { route.showSettings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Settings") }
@@ -62,6 +105,8 @@ struct LibraryView: View {
             .sheet(isPresented: $addJournal) { JournalEditor() }
             .sheet(item: $editingJournal) { JournalEditor(journal: $0) }
             .sheet(isPresented: $templates) { TemplatesView() }
+            .sheet(item: $selectedMilestone) { EventDetailView(occurrence: $0) }
+            .sheet(isPresented: $showMilestone) { EventEditor(date: .now, category: .celebration) }
             .confirmationDialog("Delete journal and its entries?", isPresented: Binding(get: { deletingJournal != nil }, set: { if !$0 { deletingJournal = nil } }), titleVisibility: .visible) {
                 Button("Delete journal", role: .destructive) { if let journal = deletingJournal { store.deleteJournal(journal) }; deletingJournal = nil }
             } message: { Text("This permanently deletes its sections, fields, and recorded entries. Scheduled events are kept, with journal links removed.") }

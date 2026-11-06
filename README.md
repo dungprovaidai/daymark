@@ -30,7 +30,9 @@ Daymark is a local-first iOS app with six tabs — Today, Calendar, Habits, Jour
 
 Screen Time is optional. FamilyControls requires an Apple-approved entitlement and distribution role; it is not enabled in this project. You can request access through Apple if you have a suitable role, then add the entitlement and a Screen Time module without changing the core journal, calendar, or habit data models.
 
-A new, native iOS journal and event planner built with SwiftUI, SwiftData, Swift Charts, and UserNotifications. Minimum deployment target: **iOS 17**. There are no third-party runtime packages, accounts, servers, or cloud synchronization.
+## Project notes
+
+Daymark is a native iOS journal and event planner built with SwiftUI, SwiftData, Swift Charts, and UserNotifications. Minimum deployment target: **iOS 17**. There are no third-party runtime packages, accounts, servers, or cloud synchronization.
 
 This is the actual application source and an Xcode project, not a browser mockup. It starts with an empty journal. Optional templates add field definitions, never fabricated records or analytics.
 
