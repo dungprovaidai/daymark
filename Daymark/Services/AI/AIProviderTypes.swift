@@ -112,3 +112,5 @@ protocol AIProviderProtocol {
     func fetchModels(configuration: AIProviderConfiguration, apiKey: String?) async throws -> [AIModelInfo]
     func chat(configuration: AIProviderConfiguration, apiKey: String?, modelID: String, messages: [AIMessage], options: AIChatRequestOptions) async throws -> AIChatResponse
 }
+
+// Manual endpoint and model IDs remain user-controlled.
