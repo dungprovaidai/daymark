@@ -4,7 +4,7 @@ import SwiftData
 
 @MainActor final class StoreAndNotificationTests: XCTestCase {
     private func makeStore() throws -> (ModelContainer, DaymarkStore) {
-        let schema = Schema([Journal.self, JournalSection.self, CustomField.self, JournalEntry.self, FieldValue.self, CalendarEvent.self, Reminder.self, Recurrence.self, EventException.self, SavedTemplate.self, Habit.self, HabitCompletion.self])
+        let schema = Schema([Journal.self, JournalSection.self, CustomField.self, JournalEntry.self, FieldValue.self, CalendarEvent.self, Reminder.self, Recurrence.self, EventException.self, SavedTemplate.self, Habit.self, HabitCompletion.self, AIProviderConfiguration.self, AIModelConfiguration.self, AITaskAssignment.self])
         let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)])
         return (container, DaymarkStore(context: container.mainContext, scheduleNotifications: false))
     }
@@ -146,6 +146,30 @@ import SwiftData
         XCTAssertEqual(store.habits.count, 1)
         XCTAssertEqual(store.habitCompletions.count, 1)
         XCTAssertEqual(store.habitCompletions.first?.completed, true)
+    }
+
+    func testAIEndpointValidationRejectsMissingSchemeAndCredentials() {
+        XCTAssertThrowsError(try AIEndpointResolver.validateBaseURL("example.com/v1"))
+        XCTAssertThrowsError(try AIEndpointResolver.validateBaseURL("https://user:pass@example.com/v1"))
+        XCTAssertNoThrow(try AIEndpointResolver.validateBaseURL("https://api.example.com/custom/base"))
+    }
+
+    func testAIProviderManagerResolvesTaskAssignment() throws {
+        let (_, store) = try makeStore()
+        let provider = AIProviderConfiguration(displayName: "Local")
+        provider.baseURLString = "http://localhost:11434"
+        provider.modelID = "local-model"
+        store.perform { store.context.insert(provider) }
+        store.ai.setAssignment(task: .moodAnalysis, providerID: provider.id, modelID: "manual-model")
+        let resolved = try XCTUnwrap(store.ai.resolvedConfiguration(for: .moodAnalysis))
+        XCTAssertEqual(resolved.provider.id, provider.id)
+        XCTAssertEqual(resolved.modelID, "manual-model")
+    }
+
+    func testAIMoodResponseValidationRejectsBadJSONAndMood() {
+        XCTAssertThrowsError(try AIMoodAnalysisService.validateMoodResponse("not json"))
+        XCTAssertThrowsError(try AIMoodAnalysisService.validateMoodResponse("{\"mood\":\"unknown\",\"confidence\":0.5,\"tags\":[],\"summary\":\"\"}"))
+        XCTAssertNoThrow(try AIMoodAnalysisService.validateMoodResponse("{\"mood\":\"calm\",\"confidence\":0.8,\"tags\":[\"quiet\"],\"summary\":\"A calm day.\"}"))
     }
 
     func testBackupRejectsAFileWithMissingReferences() throws {

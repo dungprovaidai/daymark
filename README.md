@@ -23,6 +23,7 @@ Daymark is a local-first iOS app with six tabs — Today, Calendar, Habits, Jour
 - **Widgets**: Today’s overview, upcoming events, next event/countdown, habit progress, and lock-screen progress. Interactive habit and checklist taps update the widget immediately and are applied by the app on next activation through queued actions.
 - **Notifications**: local only. Daymark does not ask for permission at launch; the first reminder or Settings explains the request and asks only on your action. Handles granted, denied, provisional, rescheduling, cancellation, time zones, and DST.
 - **Backup**: JSON export/import with validation and confirmation before replacing data, plus CSV export for journal records.
+- **Daymark AI providers**: Settings → Daymark AI → Providers supports multiple user-configured endpoints. Choose OpenAI-compatible, Gemini-native, or custom adapter modes; enter Base URL and Model ID manually; store API keys in Keychain; test a real small chat request; fetch models when supported; assign providers/models independently for Chat, Mood Analysis, Insights, and other AI tasks; configure capabilities and fallback explicitly. Daymark works offline with no AI provider.
 - **App lock**: optional Face ID/Touch ID/passcode unlock with LocalAuthentication. If device authentication is unavailable, the app stays unlocked rather than trapping you outside your data.
 - **Accessibility**: iOS 17+, light/dark mode, Dynamic Type, VoiceOver labels, and reduced-motion support.
 

@@ -25,6 +25,9 @@ struct EventOccurrence: Identifiable {
     var templates: [SavedTemplate] = []
     var habits: [Habit] = []
     var habitCompletions: [HabitCompletion] = []
+    var aiProviders: [AIProviderConfiguration] = []
+    var aiModels: [AIModelConfiguration] = []
+    var aiAssignments: [AITaskAssignment] = []
     var errorMessage: String?
     var revision = 0
     let notifications = NotificationCoordinator()
@@ -53,6 +56,9 @@ struct EventOccurrence: Identifiable {
             templates = try context.fetch(FetchDescriptor<SavedTemplate>()).sorted { $0.title < $1.title }
             habits = try context.fetch(FetchDescriptor<Habit>()).sorted { ($0.position, $0.createdAt) < ($1.position, $1.createdAt) }
             habitCompletions = try context.fetch(FetchDescriptor<HabitCompletion>())
+            aiProviders = try context.fetch(FetchDescriptor<AIProviderConfiguration>()).sorted { $0.displayName < $1.displayName }
+            aiModels = try context.fetch(FetchDescriptor<AIModelConfiguration>()).sorted { $0.modelID < $1.modelID }
+            aiAssignments = try context.fetch(FetchDescriptor<AITaskAssignment>())
             revision += 1
         } catch { errorMessage = "Your data could not be loaded. \(error.localizedDescription)" }
     }
@@ -241,6 +247,8 @@ struct EventOccurrence: Identifiable {
         if saved { Feedback.success(); reschedule() }
         return saved
     }
+    var ai: AIProviderManager { AIProviderManager(store: self) }
+
     func reschedule() {
         guard notificationSchedulingEnabled else { return }
         notifications.reconcile(events: events, reminders: reminders, recurrences: recurrences, exceptions: exceptions)

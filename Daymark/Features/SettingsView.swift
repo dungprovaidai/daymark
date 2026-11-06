@@ -47,6 +47,22 @@ struct SettingsView: View {
                 }
             }
             Section {
+                NavigationLink {
+                    AIProvidersView()
+                } label: {
+                    LabeledContent {
+                        Text(store.ai.configurations.isEmpty ? "Not configured" : "\(store.ai.configurations.count) provider\(store.ai.configurations.count == 1 ? "" : "s")")
+                            .foregroundStyle(.secondary)
+                    } label: {
+                        Label("Providers", systemImage: "cpu")
+                    }
+                }
+            } header: {
+                Text("Daymark AI")
+            } footer: {
+                Text("Configure custom AI endpoints, API keys, and models manually. API keys are stored in the iOS Keychain. Daymark works fully offline without any AI provider.")
+            }
+            Section {
                 Button { export(as: .json) } label: { Label("Export all data (JSON)", systemImage: "square.and.arrow.up") }
                 Button { showImporter = true } label: { Label("Restore from JSON backup", systemImage: "arrow.down.doc") }
                 Button { export(as: .commaSeparatedText) } label: { Label("Export journal records (CSV)", systemImage: "tablecells") }
@@ -212,7 +228,8 @@ struct PrivacyView: View {
                 Text("Journals and events are stored locally with SwiftData. Daymark doesn’t send them to a server. Device backups may include app data according to your iOS backup settings.")
             }
             Section("You’re in control") {
-                Text("Exports contain your personal information. Choose where to save or share them. JSON is a complete data export; this version does not include an import interface.")
+                Text("Exports contain your personal information. Choose where to save or share them. JSON restore validates the file first and asks before replacing local data.")
+                Text("AI provider API keys are stored in the iOS Keychain and are never included in JSON backups, UserDefaults, or logs. Provider endpoint and model settings are local configuration.")
                 Text("Archived fields retain their history. Permanently deleting a field or journal removes its associated records. Deleting a journal unlinks events without deleting those events.")
                 Text("Event titles and locations can appear in lock-screen notifications. You can change notification previews in iOS Settings.")
             }

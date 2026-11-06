@@ -14,7 +14,8 @@ import UserNotifications
         do {
             let schema = Schema([Journal.self, JournalSection.self, CustomField.self, JournalEntry.self, FieldValue.self,
                                  CalendarEvent.self, Reminder.self, Recurrence.self, EventException.self, SavedTemplate.self,
-                                 Habit.self, HabitCompletion.self])
+                                 Habit.self, HabitCompletion.self,
+                                 AIProviderConfiguration.self, AIModelConfiguration.self, AITaskAssignment.self])
             let configuration = ModelConfiguration("Daymark", schema: schema, cloudKitDatabase: .none)
             let container = try ModelContainer(for: schema, configurations: [configuration])
             self.container = container; startupError = nil
