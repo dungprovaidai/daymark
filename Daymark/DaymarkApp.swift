@@ -56,12 +56,27 @@ struct RootView: View {
             NavigationStack { LibraryView() }.tabItem { Label("Library", systemImage: "books.vertical") }.tag(3)
             NavigationStack { SettingsView() }.tabItem { Label("Settings", systemImage: "gearshape") }.tag(4)
         }
-        .task { store.reschedule() }
-        .onChange(of: scenePhase) { _, phase in if phase == .active { store.reschedule() } }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in store.reschedule() }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name.NSSystemTimeZoneDidChange)) { _ in store.reschedule() }
+        .task { await activate() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await activate() } }
+            else if phase == .background { store.syncWidgetSnapshot() }
+        }
+        .onOpenURL { route.handle($0) }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+            store.reschedule(); store.syncWidgetSnapshot()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name.NSSystemTimeZoneDidChange)) { _ in
+            store.reschedule(); store.syncWidgetSnapshot()
+        }
         .alert("Couldn’t save changes", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
             Button("OK") { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "") }
+    }
+
+    @MainActor private func activate() async {
+        store.applyPendingWidgetActions()
+        await store.notifications.refreshPermission()
+        store.reschedule()
+        store.syncWidgetSnapshot()
     }
 }

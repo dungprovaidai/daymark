@@ -7,6 +7,8 @@ struct EventEditor: View {
     @State private var draft: EventDraft
     @State private var editingReminder: ReminderSpec?
     @State private var confirmSeriesReset = false
+    @State private var showNotificationExplainer = false
+    @State private var offeredNotificationExplainer = false
     private let original: EventOccurrence?
     private let entireSeries: Bool
 
@@ -49,9 +51,6 @@ struct EventEditor: View {
                 if original?.isRecurring != true || entireSeries { recurrenceSection }
                 else { Section { Label("Editing only this occurrence", systemImage: "repeat").foregroundStyle(.secondary) } }
                 reminderSection
-                Section {
-                    NotificationPermissionView()
-                }
                 Section("A little more context") {
                     TextField("Notes", text: $draft.notes, axis: .vertical).lineLimit(3...8)
                     Picker("Journal entry", selection: $draft.journalEntryID) {
@@ -72,7 +71,7 @@ struct EventEditor: View {
             .sheet(item: $editingReminder) { reminder in
                 ReminderEditor(initial: reminder, existing: draft.reminders) { spec in
                     if let index = draft.reminders.firstIndex(where: { $0.id == spec.id }) { draft.reminders[index] = spec }
-                    else { draft.reminders.append(spec) }
+                    else { addReminder(spec) }
                 }
             }
             .confirmationDialog("Update the series schedule?", isPresented: $confirmSeriesReset, titleVisibility: .visible) {
@@ -80,6 +79,17 @@ struct EventEditor: View {
             } message: {
                 Text("Changing the dates or repeat rule resets individual edits, skipped dates, and completion overrides in this series. All occurrences will follow the new schedule.")
             }
+            .sheet(isPresented: $showNotificationExplainer, onDismiss: { offeredNotificationExplainer = true }) {
+                NotificationExplainerSheet()
+            }
+        }
+    }
+
+    private func addReminder(_ spec: ReminderSpec) {
+        draft.reminders.append(spec)
+        if !offeredNotificationExplainer, store.notifications.authorization != .authorized,
+           store.notifications.authorization != .ephemeral {
+            showNotificationExplainer = true
         }
     }
 
@@ -139,7 +149,7 @@ struct EventEditor: View {
             .onDelete { draft.reminders.remove(atOffsets: $0) }
             Menu {
                 ForEach(ReminderSpec.presets) { preset in
-                    Button(preset.label) { draft.reminders.append(ReminderSpec(amount: preset.amount, unit: preset.unit)) }
+                    Button(preset.label) { addReminder(ReminderSpec(amount: preset.amount, unit: preset.unit)) }
                         .disabled(draft.reminders.contains { $0.equivalenceKey == preset.equivalenceKey })
                 }
                 Divider()
@@ -192,25 +202,95 @@ struct ReminderEditor: View {
 struct NotificationPermissionView: View {
     @Environment(DaymarkStore.self) private var store
     @Environment(\.openURL) private var openURL
+    @State private var requesting = false
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("A gentle nudge, right on time", systemImage: "bell.badge").font(.headline)
             switch store.notifications.authorization {
             case .notDetermined:
-                Text("Daymark can remind you about your events with a notification and sound. You choose which events and when.")
+                Text("Daymark can remind you about events, habits, and important dates with a local notification and sound. You choose what gets a reminder and when. Nothing is sent to a server.")
                     .font(.subheadline).foregroundStyle(.secondary)
-                Button("Enable notifications") {
-                    Task { await store.notifications.requestPermission(); store.reschedule() }
-                }.buttonStyle(.borderedProminent)
+                Text("iOS will ask for permission only after you tap the button below.")
+                    .font(.caption).foregroundStyle(.tertiary)
+                Button {
+                    guard !requesting else { return }
+                    requesting = true
+                    Task {
+                        await store.notifications.requestPermission()
+                        store.reschedule()
+                        store.syncWidgetSnapshot()
+                        requesting = false
+                    }
+                } label: {
+                    if requesting { ProgressView() } else { Text("Enable Notifications") }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(requesting)
             case .denied:
                 Text("Notifications are off. Your reminders are saved, but iOS won’t deliver them until you allow notifications in Settings.")
                     .font(.subheadline).foregroundStyle(.secondary)
-                Button("Open iOS Settings") { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } }
-            default:
+                Text("Daymark won’t ask again automatically. iOS only shows the system prompt once.")
+                    .font(.caption).foregroundStyle(.tertiary)
+                Button("Open iOS Settings") { openSettings() }.buttonStyle(.borderedProminent)
+            case .provisional:
+                Label("Delivered quietly", systemImage: "bell.badge.fill").font(.subheadline.weight(.semibold)).foregroundStyle(Palette.color("mint"))
+                Text("iOS has granted provisional permission, so alerts arrive quietly in the Notification Center without banners or sounds. You can change this in iOS Settings.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Button("Open iOS Settings") { openSettings() }
+            case .authorized:
                 Label("Notifications enabled", systemImage: "checkmark.circle.fill").font(.subheadline).foregroundStyle(Palette.color("mint"))
-                Text("Focus and iOS notification settings may silence alerts.").font(.caption).foregroundStyle(.secondary)
+                Text("Focus, silent mode, and iOS notification settings may still silence alerts.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("Open iOS Settings") { openSettings() }
+            case .ephemeral:
+                Label("Temporary permission", systemImage: "clock.badge.checkmark").font(.subheadline).foregroundStyle(Palette.color("mint"))
+                Text("This build has temporary notification permission. Open Settings to review the long-term choice.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Button("Open iOS Settings") { openSettings() }
+            @unknown default:
+                Text("Notification permission status is unavailable. Check iOS Settings.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Button("Open iOS Settings") { openSettings() }
             }
-        }.padding(.vertical, 8).task { await store.notifications.refreshPermission() }
+        }.padding(.vertical, 8)
+            .task { await store.notifications.refreshPermission() }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                Task { await store.notifications.refreshPermission() }
+            }
+    }
+
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+    }
+}
+
+/// A clear, user-initiated explanation shown the first time a reminder is added.
+struct NotificationExplainerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Image(systemName: "bell.and.waves.left.and.right.fill")
+                            .font(.system(size: 36)).foregroundStyle(Palette.accent)
+                        Text("Reminders, only when you want them").font(.title2.weight(.bold))
+                        Text("Daymark uses iOS local notifications. They are created on this device and never sent to a server.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Event reminders arrive before or at the time you choose.", systemImage: "calendar.badge.clock")
+                        Label("Habit nudges can arrive at your chosen time each day.", systemImage: "checkmark.circle")
+                        Label("You can change or turn off permission in iOS Settings at any time.", systemImage: "gearshape")
+                    }.font(.subheadline)
+                    NotificationPermissionView()
+                    Text("If you choose not to allow notifications now, your reminders stay saved and you can enable them later in Settings.")
+                        .font(.caption).foregroundStyle(.tertiary)
+                }.padding(20).frame(maxWidth: 600)
+            }
+            .navigationTitle("Notifications").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
     }
 }
 

@@ -72,6 +72,12 @@
 			"path" = "Models/Templates.swift";
 			"sourceTree" = "<group>";
 		};
+		"84850160CC973AA1FF414686" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Services/AppRouting.swift";
+			"sourceTree" = "<group>";
+		};
 		"3A900C0D08D4AAC32B4A4BEC" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -94,6 +100,18 @@
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
 			"path" = "Services/RecurrenceEngine.swift";
+			"sourceTree" = "<group>";
+		};
+		"FECEBB1F9D194C6C405B08F7" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Services/WidgetBridge.swift";
+			"sourceTree" = "<group>";
+		};
+		"809B80E8F8C3C0B36A9032E2" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Services/WidgetSnapshotBuilder.swift";
 			"sourceTree" = "<group>";
 		};
 		"1DC7BB2C57DD2F0928E8FC2F" = {
@@ -140,6 +158,10 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "53407A16DCFF09FD5F054051";
 		};
+		"CDA67B754888F9C7BA90416E" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "84850160CC973AA1FF414686";
+		};
 		"6A219A98C68C2CC3C26B2917" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "3A900C0D08D4AAC32B4A4BEC";
@@ -155,6 +177,14 @@
 		"F71EDBA2DEC0B49ECB069609" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "EEDA8F4CCF1763FD4A6F450A";
+		};
+		"923601D886B8B877514428ED" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "FECEBB1F9D194C6C405B08F7";
+		};
+		"A3CB52D76AD7688C1DD233FA" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "809B80E8F8C3C0B36A9032E2";
 		};
 		"36C459A4FE19F8C3385B8B5B" = {
 			"isa" = "PBXFileReference";
@@ -176,6 +206,102 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "07BD9550C6F78635F63097F7";
 		};
+		"C67A8940A86FEA5F1D8BEED2" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Shared/DeepLink.swift";
+			"sourceTree" = "<group>";
+		};
+		"0B6C9CB91984E161FBA24F58" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Shared/SharedConfig.swift";
+			"sourceTree" = "<group>";
+		};
+		"13A51362ECF9C1ED464CB3C3" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Shared/WidgetAction.swift";
+			"sourceTree" = "<group>";
+		};
+		"D98B1208D3E7990B2EDEECE6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Shared/WidgetSnapshot.swift";
+			"sourceTree" = "<group>";
+		};
+		"390ADF794EC7F25463C49919" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C67A8940A86FEA5F1D8BEED2";
+		};
+		"9C063514944B5357469710A9" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0B6C9CB91984E161FBA24F58";
+		};
+		"7C72A6E61A76B46608DE0C55" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "13A51362ECF9C1ED464CB3C3";
+		};
+		"2BCB8DA7C88B0EE2B5E4E9CB" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D98B1208D3E7990B2EDEECE6";
+		};
+		"1922567D6AE23F4A33E92AF7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C67A8940A86FEA5F1D8BEED2";
+		};
+		"4AB0D0A732EF2EB611F2B5A8" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0B6C9CB91984E161FBA24F58";
+		};
+		"5CB656665387CB015107DE18" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "13A51362ECF9C1ED464CB3C3";
+		};
+		"D9C8F779ED141E66BE9305CD" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D98B1208D3E7990B2EDEECE6";
+		};
+		"7AAB613189945C42F8CEBC55" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "DaymarkWidgets.swift";
+			"sourceTree" = "<group>";
+		};
+		"CB92ABE8E246C4F7D96F744F" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "WidgetIntents.swift";
+			"sourceTree" = "<group>";
+		};
+		"C272E911EECE95B7DF71F54A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "WidgetSupport.swift";
+			"sourceTree" = "<group>";
+		};
+		"CC12C939B2CA4ACF27342E00" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "WidgetViews.swift";
+			"sourceTree" = "<group>";
+		};
+		"2751B3AF4684519C516DBAF0" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "7AAB613189945C42F8CEBC55";
+		};
+		"6FF06292B833FC336A8B43FA" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CB92ABE8E246C4F7D96F744F";
+		};
+		"D5602E87316667D042B64C32" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C272E911EECE95B7DF71F54A";
+		};
+		"A27A593807AE9956EE1DFCFE" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CC12C939B2CA4ACF27342E00";
+		};
 		"3685E330EC5277A9DD5661C6" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "folder.assetcatalog";
@@ -186,6 +312,30 @@
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "text.xml";
 			"path" = "PrivacyInfo.xcprivacy";
+			"sourceTree" = "<group>";
+		};
+		"5EC49EABE02409E19FBCEA13" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.xml";
+			"path" = "Info.plist";
+			"sourceTree" = "<group>";
+		};
+		"A654EE34E89821D457B48204" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.entitlements";
+			"path" = "Daymark.entitlements";
+			"sourceTree" = "<group>";
+		};
+		"14B14A335565559C9B591EBC" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.xml";
+			"path" = "Info.plist";
+			"sourceTree" = "<group>";
+		};
+		"EEEC4AC6D1276C55C04EF021" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.entitlements";
+			"path" = "DaymarkWidgets.entitlements";
 			"sourceTree" = "<group>";
 		};
 		"716E9590E60B3AFA6E62BF18" = {
@@ -201,6 +351,13 @@
 			"explicitFileType" = "wrapper.application";
 			"includeInIndex" = 0;
 			"path" = "Daymark.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"D1FC3980C62A8D20F6C0FFF0" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.app-extension";
+			"includeInIndex" = 0;
+			"path" = "DaymarkWidgets.appex";
 			"sourceTree" = "BUILT_PRODUCTS_DIR";
 		};
 		"6C7CCDEB3609F1FAA874E941" = {
@@ -224,14 +381,43 @@
 				"6CEA948AC0EBED9AF068A530",
 				"C8BD4ADDD266AB20B9F9A289",
 				"53407A16DCFF09FD5F054051",
+				"84850160CC973AA1FF414686",
 				"3A900C0D08D4AAC32B4A4BEC",
 				"C9797D556F2FFBBE05C580EE",
 				"1118DCC2518240BCBCC7AD76",
 				"EEDA8F4CCF1763FD4A6F450A",
+				"FECEBB1F9D194C6C405B08F7",
+				"809B80E8F8C3C0B36A9032E2",
 				"3685E330EC5277A9DD5661C6",
 				"96ED5C5789B174A01557791C",
+				"5EC49EABE02409E19FBCEA13",
+				"A654EE34E89821D457B48204",
 			);
 			"path" = "Daymark";
+			"sourceTree" = "<group>";
+		};
+		"AC019E2923F944A838FB0A8F" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"C67A8940A86FEA5F1D8BEED2",
+				"0B6C9CB91984E161FBA24F58",
+				"13A51362ECF9C1ED464CB3C3",
+				"D98B1208D3E7990B2EDEECE6",
+			);
+			"name" = "Shared";
+			"sourceTree" = "<group>";
+		};
+		"9A9EF54833B45752B2579676" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"7AAB613189945C42F8CEBC55",
+				"CB92ABE8E246C4F7D96F744F",
+				"C272E911EECE95B7DF71F54A",
+				"CC12C939B2CA4ACF27342E00",
+				"14B14A335565559C9B591EBC",
+				"EEEC4AC6D1276C55C04EF021",
+			);
+			"path" = "DaymarkWidgets";
 			"sourceTree" = "<group>";
 		};
 		"E717C295FF9827DFF805D88B" = {
@@ -247,6 +433,7 @@
 			"isa" = "PBXGroup";
 			"children" = (
 				"4E783A9E10D2A8ABA38CD11C",
+				"D1FC3980C62A8D20F6C0FFF0",
 				"6C7CCDEB3609F1FAA874E941",
 			);
 			"name" = "Products";
@@ -256,6 +443,8 @@
 			"isa" = "PBXGroup";
 			"children" = (
 				"3C3B0F03DC089F93B8457928",
+				"AC019E2923F944A838FB0A8F",
+				"9A9EF54833B45752B2579676",
 				"E717C295FF9827DFF805D88B",
 				"FBDC4F23F93125BBEEAE800C",
 			);
@@ -276,10 +465,17 @@
 				"0181531196D449570B773DB1",
 				"F6D729337968BBF443672028",
 				"362C17827BBABA2B5FCCD74E",
+				"CDA67B754888F9C7BA90416E",
 				"6A219A98C68C2CC3C26B2917",
 				"1C32D6832B4985251217E85B",
 				"1118A3F4807D47AC88824471",
 				"F71EDBA2DEC0B49ECB069609",
+				"923601D886B8B877514428ED",
+				"A3CB52D76AD7688C1DD233FA",
+				"390ADF794EC7F25463C49919",
+				"9C063514944B5357469710A9",
+				"7C72A6E61A76B46608DE0C55",
+				"2BCB8DA7C88B0EE2B5E4E9CB",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
 		};
@@ -317,6 +513,57 @@
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
 		};
+		"82CE34952E166218838BE670" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"2751B3AF4684519C516DBAF0",
+				"6FF06292B833FC336A8B43FA",
+				"D5602E87316667D042B64C32",
+				"A27A593807AE9956EE1DFCFE",
+				"1922567D6AE23F4A33E92AF7",
+				"4AB0D0A732EF2EB611F2B5A8",
+				"5CB656665387CB015107DE18",
+				"D9C8F779ED141E66BE9305CD",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"2093904A82FF706A79646301" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"112482586DC9325ECD958FF1" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"D4FAAAFCC3C6961AB2B22D7E" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D1FC3980C62A8D20F6C0FFF0";
+			"settings" = {
+				"ATTRIBUTES" = (
+					"RemoveHeadersOnCopy",
+				);
+			};
+		};
+		"750AF8B558936E3AECB9A82F" = {
+			"isa" = "PBXCopyFilesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"dstPath" = "";
+			"dstSubfolderSpec" = 13;
+			"files" = (
+				"D4FAAAFCC3C6961AB2B22D7E",
+			);
+			"name" = "Embed Foundation Extensions";
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
 		"F8A000F6C06CBAF02E297063" = {
 			"isa" = "XCBuildConfiguration";
 			"name" = "Debug";
@@ -324,12 +571,9 @@
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.example.Daymark";
 				"CODE_SIGN_STYLE" = "Automatic";
-				"GENERATE_INFOPLIST_FILE" = "YES";
-				"INFOPLIST_KEY_CFBundleDisplayName" = "Daymark";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
-				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents" = "YES";
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "Daymark/Info.plist";
+				"CODE_SIGN_ENTITLEMENTS" = "Daymark/Daymark.entitlements";
 				"TARGETED_DEVICE_FAMILY" = "1,2";
 				"SUPPORTS_MACCATALYST" = "NO";
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
@@ -355,12 +599,9 @@
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.example.Daymark";
 				"CODE_SIGN_STYLE" = "Automatic";
-				"GENERATE_INFOPLIST_FILE" = "YES";
-				"INFOPLIST_KEY_CFBundleDisplayName" = "Daymark";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
-				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents" = "YES";
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "Daymark/Info.plist";
+				"CODE_SIGN_ENTITLEMENTS" = "Daymark/Daymark.entitlements";
 				"TARGETED_DEVICE_FAMILY" = "1,2";
 				"SUPPORTS_MACCATALYST" = "NO";
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
@@ -383,6 +624,72 @@
 			"buildConfigurations" = (
 				"F8A000F6C06CBAF02E297063",
 				"B2DB900C1DBD2C369C18C79F",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"5D60831E25BEE9E3C4001A3B" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.example.Daymark.Widgets";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "DaymarkWidgets/Info.plist";
+				"CODE_SIGN_ENTITLEMENTS" = "DaymarkWidgets/DaymarkWidgets.entitlements";
+				"SKIP_INSTALL" = "YES";
+				"APPLICATION_EXTENSION_API_ONLY" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+				"ENABLE_TESTABILITY" = "YES";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+		};
+		"665B760FB4273FE9F88FE770" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.example.Daymark.Widgets";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "DaymarkWidgets/Info.plist";
+				"CODE_SIGN_ENTITLEMENTS" = "DaymarkWidgets/DaymarkWidgets.entitlements";
+				"SKIP_INSTALL" = "YES";
+				"APPLICATION_EXTENSION_API_ONLY" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"SWIFT_COMPILATION_MODE" = "wholemodule";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"VALIDATE_PRODUCT" = "YES";
+			};
+		};
+		"7475E6A6368E532E2681E781" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"5D60831E25BEE9E3C4001A3B",
+				"665B760FB4273FE9F88FE770",
 			);
 			"defaultConfigurationIsVisible" = 0;
 			"defaultConfigurationName" = "Release";
@@ -489,6 +796,18 @@
 			"defaultConfigurationIsVisible" = 0;
 			"defaultConfigurationName" = "Release";
 		};
+		"937A01D863611CD7A85B6FE9" = {
+			"isa" = "PBXContainerItemProxy";
+			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
+			"proxyType" = 1;
+			"remoteGlobalIDString" = "FAD79F600E79F84B420BD567";
+			"remoteInfo" = "DaymarkWidgets";
+		};
+		"A9181351A1FEE60D4A78323F" = {
+			"isa" = "PBXTargetDependency";
+			"target" = "FAD79F600E79F84B420BD567";
+			"targetProxy" = "937A01D863611CD7A85B6FE9";
+		};
 		"7E85D4A68785761E1DBB22D8" = {
 			"isa" = "PBXContainerItemProxy";
 			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
@@ -508,6 +827,26 @@
 				"BCE16DD0260827ECF338C787",
 				"7561BFB015D8F536760CB671",
 				"0189424A5A60FED329FA868E",
+				"750AF8B558936E3AECB9A82F",
+			);
+			"buildRules" = (
+
+			);
+			"dependencies" = (
+				"A9181351A1FEE60D4A78323F",
+			);
+			"name" = "Daymark";
+			"productName" = "Daymark";
+			"productReference" = "4E783A9E10D2A8ABA38CD11C";
+			"productType" = "com.apple.product-type.application";
+		};
+		"FAD79F600E79F84B420BD567" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "7475E6A6368E532E2681E781";
+			"buildPhases" = (
+				"82CE34952E166218838BE670",
+				"112482586DC9325ECD958FF1",
+				"2093904A82FF706A79646301",
 			);
 			"buildRules" = (
 
@@ -515,10 +854,10 @@
 			"dependencies" = (
 
 			);
-			"name" = "Daymark";
-			"productName" = "Daymark";
-			"productReference" = "4E783A9E10D2A8ABA38CD11C";
-			"productType" = "com.apple.product-type.application";
+			"name" = "DaymarkWidgets";
+			"productName" = "DaymarkWidgets";
+			"productReference" = "D1FC3980C62A8D20F6C0FFF0";
+			"productType" = "com.apple.product-type.app-extension";
 		};
 		"C062A5A4A7F4F37DD90F54CB" = {
 			"isa" = "PBXNativeTarget";
@@ -547,6 +886,10 @@
 					"F75109BEB4DD8800DA6B45F8" = {
 						"CreatedOnToolsVersion" = "16.0";
 					};
+					"FAD79F600E79F84B420BD567" = {
+						"CreatedOnToolsVersion" = "16.0";
+						"ProvisioningStyle" = "Automatic";
+					};
 					"C062A5A4A7F4F37DD90F54CB" = {
 						"CreatedOnToolsVersion" = "16.0";
 						"TestTargetID" = "F75109BEB4DD8800DA6B45F8";
@@ -567,6 +910,7 @@
 			"projectRoot" = "";
 			"targets" = (
 				"F75109BEB4DD8800DA6B45F8",
+				"FAD79F600E79F84B420BD567",
 				"C062A5A4A7F4F37DD90F54CB",
 			);
 		};

@@ -55,7 +55,7 @@ struct EventOccurrence: Identifiable {
 
     @discardableResult func perform(_ operation: () throws -> Void) -> Bool {
         do {
-            try operation(); try context.save(); reload(); return true
+            try operation(); try context.save(); reload(); syncWidgetSnapshot(); return true
         } catch {
             context.rollback(); reload()
             errorMessage = "Changes could not be saved. \(error.localizedDescription)"

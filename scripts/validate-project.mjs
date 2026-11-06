@@ -48,7 +48,11 @@ for (const file of swift) {
   checkSwiftDelimiters(source, path.relative(root, file));
   lines += source.split('\n').length;
   assert(!/\b(TODO|FIXME|fatalError)\b/.test(source), `${file}: unfinished/crashing stub`);
-  const relative = file.includes('DaymarkTests') ? path.basename(file) : path.relative(path.join(root, 'Daymark'), file).replaceAll('\\', '/');
+  const relative = file.includes('DaymarkTests') || file.includes('DaymarkWidgets')
+    ? path.basename(file)
+    : file.includes(`${path.sep}Shared${path.sep}`)
+      ? path.relative(root, file).replaceAll('\\', '/')
+      : path.relative(path.join(root, 'Daymark'), file).replaceAll('\\', '/');
   assert(project.includes(JSON.stringify(relative)), `${relative} missing from Xcode project`);
 }
 for (const file of all.filter(x => x.endsWith('.json'))) JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -60,6 +64,16 @@ assert.equal(png.subarray(1, 4).toString(), 'PNG');
 assert.equal(png.readUInt32BE(16), 1024); assert.equal(png.readUInt32BE(20), 1024);
 assert.equal(png[25], 2, 'App icon must use opaque RGB');
 assert(project.includes('"IPHONEOS_DEPLOYMENT_TARGET" = "17.0"'));
+assert(project.includes('DaymarkWidgets.appex'), 'Widget extension product missing');
+assert(project.includes('com.apple.widgetkit-extension') === false, 'Extension point belongs in Info.plist, not the project');
+assert(fs.readFileSync(path.join(root, 'DaymarkWidgets/Info.plist'), 'utf8').includes('com.apple.widgetkit-extension'), 'Widget extension point missing');
+for (const file of ['Daymark/Info.plist', 'Daymark/Daymark.entitlements', 'DaymarkWidgets/Info.plist', 'DaymarkWidgets/DaymarkWidgets.entitlements']) {
+  assert(fs.existsSync(path.join(root, file)), `${file} missing`);
+  assert(fs.readFileSync(path.join(root, file), 'utf8').includes('group.com.example.Daymark') || file.endsWith('Info.plist'), `${file} missing App Group`);
+}
+assert(fs.readFileSync(path.join(root, 'Daymark/Info.plist'), 'utf8').includes('<string>daymark</string>'), 'URL scheme missing');
+assert(project.includes('"CODE_SIGN_ENTITLEMENTS" = "Daymark/Daymark.entitlements"'), 'App entitlements not configured');
+assert(project.includes('"CODE_SIGN_ENTITLEMENTS" = "DaymarkWidgets/DaymarkWidgets.entitlements"'), 'Widget entitlements not configured');
 const schemaSource = fs.readFileSync(path.join(root, 'Daymark/DaymarkApp.swift'), 'utf8');
 const models = swift.filter(x => !x.includes('Tests')).flatMap(file => [...fs.readFileSync(file, 'utf8').matchAll(/@Model final class (\w+)/g)].map(x => x[1]));
 for (const model of models) assert(schemaSource.includes(`${model}.self`), `${model} not registered in persistent schema`);

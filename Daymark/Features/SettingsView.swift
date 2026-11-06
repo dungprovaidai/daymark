@@ -31,7 +31,11 @@ struct SettingsView: View {
                     Text("System").tag("system"); Text("Light").tag("light"); Text("Dark").tag("dark")
                 } label: { Label("Appearance", systemImage: "circle.lefthalf.filled") }
                 Toggle(isOn: $haptics) { Label("Haptic feedback", systemImage: "hand.tap") }
-                NavigationLink { NotificationSettingsView() } label: { Label("Notifications", systemImage: "bell") }
+                NavigationLink { NotificationSettingsView() } label: {
+                    LabeledContent {
+                        Text(store.notifications.statusTitle).foregroundStyle(.secondary)
+                    } label: { Label("Notifications", systemImage: "bell") }
+                }
             }
             Section {
                 Button { export(as: .json) } label: { Label("Export all data (JSON)", systemImage: "square.and.arrow.up") }
@@ -51,6 +55,7 @@ struct SettingsView: View {
                 }.frame(maxWidth: .infinity).multilineTextAlignment(.center).padding(.vertical, 16)
             }.listRowBackground(Palette.accent.opacity(0.05))
         }.navigationTitle("Settings")
+            .task { await store.notifications.refreshPermission() }
             .fileExporter(isPresented: $showExporter, document: document, contentType: exportType,
                           defaultFilename: "Daymark-\(DayKey.string(.now))") { result in
                 if case .failure(let error) = result { exportError = error.localizedDescription }
@@ -70,9 +75,27 @@ struct SettingsView: View {
 struct NotificationSettingsView: View {
     @Environment(DaymarkStore.self) private var store
     @Environment(\.openURL) private var openURL
+    @State private var testMessage: String?
+    @State private var showTestMessage = false
     var body: some View {
         List {
             Section { NotificationPermissionView() }
+            Section {
+                LabeledContent("Authorization", value: store.notifications.statusTitle)
+                Button("Send test notification") {
+                    Task {
+                        testMessage = await store.notifications.sendTestNotification() ?? "Test notification scheduled for 3 seconds from now."
+                        showTestMessage = true
+                    }
+                }
+                .disabled(!store.notifications.canDeliver)
+                if !store.notifications.canDeliver {
+                    Text("The test becomes available after you allow notifications.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } header: { Text("Test") } footer: {
+                Text("A test is a real local notification. If iOS is in Focus or silent mode, the banner or sound may be suppressed.")
+            }
             Section("Schedule status") {
                 LabeledContent("Queued reminders", value: "\(store.notifications.queuedCount)")
                 if let date = store.notifications.lastScheduledDate { LabeledContent("Last queued alert", value: date.formatted(date: .abbreviated, time: .shortened)) }
@@ -89,6 +112,11 @@ struct NotificationSettingsView: View {
                 Text("Daymark cannot guarantee indefinite reminders without being reopened. Background execution, Focus, silent mode, and notification delivery are controlled by iOS.")
             }.font(.subheadline).foregroundStyle(.secondary)
         }.navigationTitle("Notifications").navigationBarTitleDisplayMode(.inline)
+            .task { await store.notifications.refreshPermission() }
+            .alert("Test notification", isPresented: $showTestMessage) { Button("OK") { } } message: { Text(testMessage ?? "") }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                Task { await store.notifications.refreshPermission() }
+            }
     }
 }
 

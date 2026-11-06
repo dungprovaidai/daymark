@@ -5,14 +5,30 @@ struct TodayView: View {
     @Environment(AppRoute.self) private var route
     @Environment(\.scenePhase) private var scenePhase
     @State private var today = Date()
+    private var displayedDate: Date { route.journalDate ?? today }
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: today)
         return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
     }
     var body: some View {
-        JournalDayView(date: today, header: name.isEmpty ? greeting : "\(greeting), \(name)")
+        JournalDayView(
+            date: displayedDate,
+            header: name.isEmpty ? greeting : "\(greeting), \(name)",
+            journalID: route.journalID,
+            focusedFieldID: route.focusedFieldID,
+            focusToken: route.navigationToken
+        )
             .navigationTitle("Today").navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if !Calendar.current.isDate(displayedDate, inSameDayAs: .now) {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Today") {
+                            route.journalID = nil; route.journalDate = nil; route.focusedFieldID = nil
+                            route.navigationToken += 1
+                            Feedback.tap()
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { route.selectedTab = 4 } label: { Image(systemName: "person.crop.circle") }
                         .accessibilityLabel("Preferences")
@@ -28,6 +44,8 @@ struct JournalDayView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let date: Date
     var header: String = "A day to remember"
+    var focusedFieldID: UUID?
+    var focusToken: Int
     @State private var journalID: UUID?
     @State private var showField = false
     @State private var showNote = false
@@ -35,13 +53,15 @@ struct JournalDayView: View {
     @State private var showEvent = false
     @State private var showJournal = false
     @State private var deleteEntry = false
-    init(date: Date, header: String = "A day to remember", journalID: UUID? = nil) {
-        self.date = date; self.header = header; _journalID = State(initialValue: journalID)
+    init(date: Date, header: String = "A day to remember", journalID: UUID? = nil, focusedFieldID: UUID? = nil, focusToken: Int = 0) {
+        self.date = date; self.header = header; self.focusedFieldID = focusedFieldID; self.focusToken = focusToken
+        _journalID = State(initialValue: journalID)
     }
     private var journal: Journal? { store.journals.first { $0.id == journalID } ?? store.journals.first }
     private var entry: JournalEntry? { journal.flatMap { store.entry(journalID: $0.id, date: date) } }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -124,6 +144,17 @@ struct JournalDayView: View {
             .confirmationDialog("Delete this day’s journal entry?", isPresented: $deleteEntry, titleVisibility: .visible) {
                 Button("Delete entry", role: .destructive) { if let entry { store.deleteEntry(entry) } }
             } message: { Text("This removes the recorded values and reflection for this journal on this date. Your field definitions stay available.") }
+            .onAppear { scrollToFocused(proxy) }
+            .onChange(of: focusToken) { _, _ in scrollToFocused(proxy) }
+            .onChange(of: focusedFieldID) { _, _ in scrollToFocused(proxy) }
+        }
+    }
+
+    private func scrollToFocused(_ proxy: ScrollViewProxy) {
+        guard let focusedFieldID else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(focusedFieldID, anchor: .center) }
+        }
     }
 
     private func progressCard(_ journal: Journal) -> some View {
@@ -152,6 +183,7 @@ struct JournalDayView: View {
         VStack(spacing: 0) {
             ForEach(Array(fields.enumerated()), id: \.element.id) { index, field in
                 FieldInputRow(field: field, date: date, value: store.value(fieldID: field.id, entryID: entry?.id))
+                    .id(field.id)
                     .padding(16)
                 if index < fields.count - 1 { Divider().padding(.leading, 70) }
             }

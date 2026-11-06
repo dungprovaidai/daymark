@@ -22,12 +22,69 @@ struct PlannedNotification {
     private let center = UNUserNotificationCenter.current()
     /// Leave a little capacity below the platform's pending-request limit.
     static let capacity = 60
+    static let testIdentifier = "daymark/test"
+
+    var canDeliver: Bool {
+        switch authorization {
+        case .authorized, .provisional, .ephemeral: return true
+        default: return false
+        }
+    }
+
+    var statusTitle: String {
+        switch authorization {
+        case .authorized: return "On"
+        case .provisional: return "Quiet delivery"
+        case .ephemeral: return "Temporary"
+        case .denied: return "Off"
+        case .notDetermined: return "Not enabled"
+        @unknown default: return "Unknown"
+        }
+    }
 
     func refreshPermission() async { authorization = await center.notificationSettings().authorizationStatus }
-    func requestPermission() async {
+
+    /// Only the explicit button in the permission UI calls this. When the
+    /// status is already determined, iOS will not show the dialog again, so we
+    /// simply refresh instead of asking repeatedly.
+    @discardableResult
+    func requestPermission() async -> UNAuthorizationStatus {
+        if authorization != .notDetermined {
+            await refreshPermission()
+            return authorization
+        }
         do { _ = try await center.requestAuthorization(options: [.alert, .sound, .badge]) }
         catch { lastError = error.localizedDescription }
         await refreshPermission()
+        return authorization
+    }
+
+    /// Schedules a real local notification in three seconds. Uses a stable
+    /// identifier so repeated taps replace the previous test.
+    func sendTestNotification() async -> String? {
+        await refreshPermission()
+        guard canDeliver else {
+            return "Notifications are not allowed. Enable them in iOS Settings first."
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "Daymark reminder test"
+        content.body = "If you can see this, notifications are working."
+        content.sound = .default
+        content.userInfo = ["deepLink": "daymark://today"]
+        let request = UNNotificationRequest(
+            identifier: Self.testIdentifier,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
+        )
+        center.removePendingNotificationRequests(withIdentifiers: [Self.testIdentifier])
+        do {
+            try await center.add(request)
+            lastError = nil
+            return nil
+        } catch {
+            lastError = "The test notification could not be scheduled. \(error.localizedDescription)"
+            return lastError
+        }
     }
     func reconcile(events: [CalendarEvent], reminders: [Reminder], recurrences: [Recurrence], exceptions: [EventException]) {
         waiting = Self.makePlan(events: events, reminders: reminders, recurrences: recurrences, exceptions: exceptions)
@@ -108,6 +165,10 @@ struct PlannedNotification {
     var selectedTab = 0
     var calendarDate = Date()
     var eventID: UUID?
+    var journalID: UUID?
+    var journalDate: Date?
+    var focusedFieldID: UUID?
+    var navigationToken = 0
 }
 
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
@@ -118,12 +179,8 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
-        let eventID = (info["eventID"] as? String).flatMap(UUID.init(uuidString:))
-        let date = (info["start"] as? Double).map(Date.init(timeIntervalSince1970:))
         Task { @MainActor in
-            AppRoute.shared.eventID = eventID
-            if let date { AppRoute.shared.calendarDate = date }
-            AppRoute.shared.selectedTab = 1
+            AppRoute.shared.handleNotification(info)
             completionHandler()
         }
     }

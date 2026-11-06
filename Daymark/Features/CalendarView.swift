@@ -108,6 +108,7 @@ struct CalendarView: View {
                 }.presentationDetents([.medium, .large])
             }
             .onChange(of: route.eventID) { _, _ in openNotification() }
+            .onChange(of: route.navigationToken) { _, _ in openNotification() }
             .onAppear { openNotification() }
     }
 
