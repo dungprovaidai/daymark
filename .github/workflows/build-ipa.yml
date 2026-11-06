@@ -1,0 +1,60 @@
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/build-ipa.yml"
+      - "Daymark/**"
+      - "Daymark.xcodeproj/**"
+      - "DaymarkTests/**"
+      - "scripts/**"
+
+concurrency:
+  group: build-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Archive and package IPA
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Build archive without code signing
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Daymark.xcodeproj \
+            -scheme Daymark \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Daymark.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            archive
+
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$RUNNER_TEMP/Daymark.xcarchive/Products/Applications/Daymark.app" "$RUNNER_TEMP/ipa/Payload/"
+          cd "$RUNNER_TEMP/ipa"
+          zip -qry Daymark-unsigned.ipa Payload
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Daymark-unsigned-ipa
+          path: ${{ runner.temp }}/ipa/Daymark-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
