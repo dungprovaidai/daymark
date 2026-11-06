@@ -135,16 +135,28 @@ struct EventOccurrence: Identifiable {
     }
     func occurrences(in range: DateInterval) -> [EventOccurrence] {
         let exceptionsByKey = Dictionary(uniqueKeysWithValues: exceptions.map { ($0.key, $0) })
-        return events.flatMap { event in
+        var result: [EventOccurrence] = []
+        for event in events {
             let schedule = self.schedule(for: event)
-            return RecurrenceEngine.occurrences(schedule, in: range).compactMap { time -> EventOccurrence? in
+            let times = RecurrenceEngine.occurrences(schedule, in: range)
+            for time in times {
                 let key = OccurrenceIdentity.key(eventID: event.id, start: time.start)
                 let exception = exceptionsByKey[key]
-                guard exception?.cancelled != true && exception?.replacementID == nil else { return nil }
-                return .init(event: event, start: time.start, end: time.end, isRecurring: schedule.rule != nil,
-                             completed: exception?.completed ?? event.completed)
+                guard exception?.cancelled != true, exception?.replacementID == nil else { continue }
+                let occurrence = EventOccurrence(
+                    event: event,
+                    start: time.start,
+                    end: time.end,
+                    isRecurring: schedule.rule != nil,
+                    completed: exception?.completed ?? event.completed
+                )
+                result.append(occurrence)
             }
-        }.sorted { $0.start == $1.start ? $0.event.title < $1.event.title : $0.start < $1.start }
+        }
+        return result.sorted { lhs, rhs in
+            if lhs.start == rhs.start { return lhs.event.title < rhs.event.title }
+            return lhs.start < rhs.start
+        }
     }
     private func exception(for occurrence: EventOccurrence) -> EventException {
         if let existing = exceptions.first(where: { $0.key == occurrence.id }) { return existing }
