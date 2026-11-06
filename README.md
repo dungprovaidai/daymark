@@ -1,5 +1,35 @@
 # Daymark
 
+> Personal journal, calendar, habits, insights, and life-management app for iPhone.
+
+Daymark is a local-first iOS app with six tabs — Today, Calendar, Habits, Journal, Insights, and Library — plus a Settings sheet. It uses SwiftData, WidgetKit, and local notifications. Your data stays on this device; there is no account or cloud sync in this build.
+
+## Setup
+
+1. Open `Daymark.xcodeproj` in Xcode or run the included project-generation script.
+2. In the `Daymark` target’s **Signing & Capabilities**, select your Team and enable the App Group `group.com.example.Daymark` for both `Daymark` and `DaymarkWidgets`.
+3. Set the bundle IDs: app `com.example.Daymark`, widgets `com.example.Daymark.Widgets`.
+4. Run on a device for widgets, notifications, and Face ID; the simulator can run the app but cannot fully verify permission prompts.
+5. If you fork the project, replace `group.com.example.Daymark` in `Daymark/Daymark.entitlements`, `DaymarkWidgets/DaymarkWidgets.entitlements`, and `Shared/SharedConfig.swift` with your own group.
+
+## Features
+
+- **Today**: customizable dashboard with show/hide and reorder, quick statistics, and Quick Capture for journal entries, events, reminders, habits, reflections, and milestones.
+- **Journal**: multiple journals, sections, dynamic custom fields, search, and safe preservation of historical entries when fields are archived.
+- **Calendar**: events, recurrence, reminders, completion, countdowns, and anniversaries.
+- **Habits**: custom habits with daily/weekly/monthly/selected-day schedules, check-ins, counters, durations, streaks, history, reminders, archive, and delete.
+- **Insights**: charts and statistics from your real journal entries and habit check-ins.
+- **Library**: journals, templates, milestones, archived records, and search/filter organization.
+- **Widgets**: Today’s overview, upcoming events, next event/countdown, habit progress, and lock-screen progress. Interactive habit and checklist taps update the widget immediately and are applied by the app on next activation through queued actions.
+- **Notifications**: local only. Daymark does not ask for permission at launch; the first reminder or Settings explains the request and asks only on your action. Handles granted, denied, provisional, rescheduling, cancellation, time zones, and DST.
+- **Backup**: JSON export/import with validation and confirmation before replacing data, plus CSV export for journal records.
+- **App lock**: optional Face ID/Touch ID/passcode unlock with LocalAuthentication. If device authentication is unavailable, the app stays unlocked rather than trapping you outside your data.
+- **Accessibility**: iOS 17+, light/dark mode, Dynamic Type, VoiceOver labels, and reduced-motion support.
+
+## Screen Time / FamilyControls
+
+Screen Time is optional. FamilyControls requires an Apple-approved entitlement and distribution role; it is not enabled in this project. You can request access through Apple if you have a suitable role, then add the entitlement and a Screen Time module without changing the core journal, calendar, or habit data models.
+
 A new, native iOS journal and event planner built with SwiftUI, SwiftData, Swift Charts, and UserNotifications. Minimum deployment target: **iOS 17**. There are no third-party runtime packages, accounts, servers, or cloud synchronization.
 
 This is the actual application source and an Xcode project, not a browser mockup. It starts with an empty journal. Optional templates add field definitions, never fabricated records or analytics.
