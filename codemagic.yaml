@@ -1,0 +1,34 @@
+
+workflows:
+  daymark-unsigned:
+    name: Daymark iOS - Unsigned IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    environment:
+      xcode: latest
+
+    scripts:
+      - name: Build Daymark
+        script: |
+          xcodebuild \
+            -project Daymark.xcodeproj \
+            -scheme Daymark \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package unsigned IPA
+        script: |
+          mkdir -p output/Payload
+          APP="build/Build/Products/Release-iphoneos/Daymark.app"
+          test -d "$APP" || { echo "Daymark.app not found"; exit 1; }
+          cp -R "$APP" output/Payload/
+          cd output
+          zip -r Daymark-unsigned.ipa Payload
+
+    artifacts:
+      - output/*.ipa
