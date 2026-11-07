@@ -91,6 +91,14 @@ struct SettingsView: View {
                 Text("When enabled, Daymark asks for \(lock.biometryDescription) after you leave the app. Authentication happens on this device; Daymark never receives your biometric data. If device authentication is unavailable, the app stays unlocked so you are not trapped outside your records.")
             }
             Section {
+                Button { store.syncWidgetSnapshot() } label: {
+                    Label("Refresh widgets now", systemImage: "arrow.clockwise")
+                }
+                WidgetDiagnosticsView()
+            } header: { Text("Home Screen widgets") } footer: {
+                Text("Widgets read a small JSON snapshot from the App Group (group.com.example.Daymark). If this build cannot access the App Group, widgets will stay blank even after you open the app. Install a signed build with your Team’s App Group, then refresh. Widgets never open SwiftData directly.")
+            }
+            Section {
                 NavigationLink { AboutView() } label: { Label("About Daymark", systemImage: "info.circle") }
             }
             Section {
@@ -250,5 +258,31 @@ struct AboutView: View {
                 Text("Recurring schedules use the event’s time zone. During a spring-forward gap, a missing time advances to the next valid time; during a fall-back overlap, the first occurrence of that time is used. Monthly and yearly schedules skip nonexistent dates.")
             }
         }.navigationTitle("About").navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct WidgetDiagnosticsView: View {
+    @Environment(DaymarkStore.self) private var store
+    @State private var refreshToken = 0
+    private var diagnostic: WidgetSnapshotDiagnostic {
+        _ = refreshToken
+        return WidgetSnapshotStore.readDiagnostic()
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            LabeledContent("App Group", value: DaymarkShared.isAppGroupAvailable ? "Available" : "Unavailable")
+            Text(DaymarkShared.diagnosticSummary()).font(.caption).foregroundStyle(.secondary)
+            LabeledContent("Status", value: diagnostic.headline)
+            Text(diagnostic.detail).font(.caption).foregroundStyle(.secondary)
+            if let at = store.lastWidgetSyncAt {
+                LabeledContent("Last app sync", value: at.formatted(date: .omitted, time: .shortened))
+            }
+            if let message = store.widgetSyncMessage {
+                Text(message).font(.caption).foregroundStyle(.secondary)
+            }
+            Text("Snapshot file: \(DaymarkShared.snapshotURL.lastPathComponent)").font(.caption2).foregroundStyle(.tertiary)
+        }
+        .onChange(of: store.lastWidgetSyncAt) { _, _ in refreshToken += 1 }
+        .onAppear { refreshToken += 1 }
     }
 }

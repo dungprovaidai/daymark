@@ -42,6 +42,15 @@ enum WidgetEntryFactory {
 
     static func nextRefresh(for entry: DaymarkWidgetEntry) -> Date {
         let now = Date()
+        // If we have no real snapshot yet, retry quickly so the widget
+        // recovers shortly after the app writes its first snapshot, even
+        // if the reload signal was missed.
+        if !entry.snapshot.hasRealData {
+            return now.addingTimeInterval(5 * 60)
+        }
+        if entry.snapshot.isStale(now: now) {
+            return now.addingTimeInterval(15 * 60)
+        }
         var candidates = [now.addingTimeInterval(30 * 60)]
         if let midnight = Calendar.current.nextDate(
             after: now,

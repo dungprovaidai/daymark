@@ -30,6 +30,8 @@ struct EventOccurrence: Identifiable {
     var aiAssignments: [AITaskAssignment] = []
     var errorMessage: String?
     var revision = 0
+    var lastWidgetSyncAt: Date?
+    var widgetSyncMessage: String?
     let notifications = NotificationCoordinator()
     private let notificationSchedulingEnabled: Bool
 
@@ -40,6 +42,10 @@ struct EventOccurrence: Identifiable {
         if journals.isEmpty && errorMessage == nil {
             perform { context.insert(Journal(title: "My journal")) }
         }
+        // Write an initial snapshot even when no edit has happened yet, so a
+        // widget added before any save still shows today's data after the
+        // first launch instead of a blank skeleton.
+        syncWidgetSnapshot()
     }
 
     func reload() {

@@ -97,6 +97,10 @@ struct WidgetSnapshot: Codable, Equatable {
     var notificationsEnabled: Bool
     /// Optional so snapshots written by earlier builds remain decodable.
     var habits: [WidgetHabitInfo]? = nil
+    /// Set by the app when it writes the snapshot. Lets the widget show a
+    /// helpful "App Group unavailable" message instead of a blank skeleton
+    /// when a sideloaded/unsigned build cannot share the container.
+    var appGroupAvailable: Bool? = nil
 
     var habitItems: [WidgetHabitInfo] { habits ?? [] }
 
@@ -127,6 +131,18 @@ struct WidgetSnapshot: Codable, Equatable {
         progress.first { $0.journalID == journalID }
     }
 
+    /// True when this snapshot actually came from the app (not the
+    /// `.empty` placeholder used when no file can be read).
+    var hasRealData: Bool {
+        generatedAt != .distantPast && !journals.isEmpty
+    }
+
+    /// True when the snapshot is older than the given age (default 24h).
+    /// Used by the widget to warn instead of silently showing stale data.
+    func isStale(now: Date = .now, age: TimeInterval = 24 * 3600) -> Bool {
+        !hasRealData || now.timeIntervalSince(generatedAt) > age
+    }
+
     func checklistItems(journalID: UUID?, sectionID: UUID?) -> [WidgetChecklistItem] {
         let selectedJournal = journal(id: journalID)
         return checklist.filter { item in
@@ -155,6 +171,12 @@ enum WidgetSnapshotStore {
         WidgetFileLock.withLock { readUnlocked() }
     }
 
+    /// Diagnostic read that distinguishes missing / corrupt / empty files.
+    /// Used by Settings → Widgets to explain why a widget is blank.
+    static func readDiagnostic() -> WidgetSnapshotDiagnostic {
+        WidgetFileLock.withLock { readDiagnosticUnlocked() }
+    }
+
     static func write(_ snapshot: WidgetSnapshot) {
         WidgetFileLock.withLock { writeUnlocked(snapshot) }
     }
@@ -174,9 +196,77 @@ enum WidgetSnapshotStore {
         return try? decoder.decode(WidgetSnapshot.self, from: data)
     }
 
+    private static func readDiagnosticUnlocked() -> WidgetSnapshotDiagnostic {
+        let fileExists = FileManager.default.fileExists(atPath: DaymarkShared.snapshotURL.path)
+        guard fileExists else {
+            return .missing(appGroupAvailable: DaymarkShared.isAppGroupAvailable)
+        }
+        guard let data = try? Data(contentsOf: DaymarkShared.snapshotURL) else {
+            return .missing(appGroupAvailable: DaymarkShared.isAppGroupAvailable)
+        }
+        if data.isEmpty {
+            return .emptyFile(appGroupAvailable: DaymarkShared.isAppGroupAvailable)
+        }
+        if let snapshot = try? decoder.decode(WidgetSnapshot.self, from: data) {
+            return .found(snapshot)
+        }
+        return .corrupt(appGroupAvailable: DaymarkShared.isAppGroupAvailable)
+    }
+
     private static func writeUnlocked(_ snapshot: WidgetSnapshot) {
         DaymarkShared.ensureDirectory()
         guard let data = try? encoder.encode(snapshot) else { return }
         try? data.write(to: DaymarkShared.snapshotURL, options: .atomic)
+    }
+}
+
+/// Result of a diagnostic snapshot read.
+enum WidgetSnapshotDiagnostic: Equatable {
+    case missing(appGroupAvailable: Bool)
+    case emptyFile(appGroupAvailable: Bool)
+    case corrupt(appGroupAvailable: Bool)
+    case found(WidgetSnapshot)
+
+    var snapshot: WidgetSnapshot? {
+        if case .found(let snapshot) = self { return snapshot }
+        return nil
+    }
+}
+
+extension WidgetSnapshotDiagnostic {
+    var headline: String {
+        switch self {
+        case .missing: return "No widget data yet"
+        case .emptyFile: return "Widget data file is empty"
+        case .corrupt: return "Widget data could not be read"
+        case .found(let snapshot):
+            return snapshot.hasRealData ? "Widget data ready" : "Widget data empty"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .missing(let available):
+            return available
+                ? "Open Daymark once, then add the widget. The first sync runs when the app opens."
+                : "The App Group container is unavailable in this build, so the app and widget cannot share data. Install a signed build with the App Group (Xcode → Signing & Capabilities), or check the provisioning profile."
+        case .emptyFile(let available):
+            return available
+                ? "The snapshot file exists but is empty. Tap “Refresh widgets” in Settings, or reopen the app."
+                : "The App Group container is unavailable. Data cannot sync to the widget in this build."
+        case .corrupt(let available):
+            return available
+                ? "The snapshot file could not be decoded. Tap “Refresh widgets” to rewrite it."
+                : "The App Group container is unavailable and the snapshot could not be read."
+        case .found(let snapshot):
+            guard snapshot.hasRealData else {
+                return "The last sync contained no journals. Create a journal in Daymark and refresh."
+            }
+            let age = Date().timeIntervalSince(snapshot.generatedAt)
+            if age > 24 * 3600 {
+                return "Last sync is old. Open Daymark to refresh the widget."
+            }
+            return "Synced \(snapshot.generatedAt.formatted(date: .omitted, time: .shortened)) · \(snapshot.journals.count) journal(s) · \(snapshot.upcoming.count) upcoming event(s) · \(snapshot.habitItems.count) habit(s)."
+        }
     }
 }

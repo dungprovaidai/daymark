@@ -45,6 +45,14 @@ enum DaymarkShared {
 
     static var isAppGroupAvailable: Bool { appGroupURL != nil }
 
+    /// Short diagnostic summary for Settings → Widgets.
+    static func diagnosticSummary() -> String {
+        if let url = appGroupURL {
+            return "App Group available: \(url.lastPathComponent)"
+        }
+        return "App Group unavailable — using local fallback (\(fallbackDirectoryName)). Widgets cannot read this data."
+    }
+
     static func ensureDirectory() {
         try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
     }

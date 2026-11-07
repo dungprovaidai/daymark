@@ -6,7 +6,13 @@ extension DaymarkStore {
     /// Writes the small read-only snapshot used by WidgetKit and asks the
     /// system to reload widget timelines. Widgets never open SwiftData.
     func syncWidgetSnapshot() {
-        WidgetSnapshotStore.write(WidgetSnapshotBuilder.make(from: self))
+        var snapshot = WidgetSnapshotBuilder.make(from: self)
+        snapshot.appGroupAvailable = DaymarkShared.isAppGroupAvailable
+        WidgetSnapshotStore.write(snapshot)
+        lastWidgetSyncAt = snapshot.generatedAt
+        widgetSyncMessage = DaymarkShared.isAppGroupAvailable
+            ? "Widget data synced."
+            : "Widget sync wrote to the local fallback — App Group unavailable, widgets cannot read it."
         WidgetCenter.shared.reloadAllTimelines()
     }
 

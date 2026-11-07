@@ -32,12 +32,27 @@ struct DaymarkWidgetView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "sun.horizon.fill").font(.title2).foregroundStyle(accent)
-            Text("Open Daymark").font(.headline)
-            Text("Your journal and events will appear here after you open the app once.")
-                .font(.caption).foregroundStyle(.secondary)
+            Text(WidgetFormat.weekday(entry.date).uppercased())
+                .font(.system(size: 9, weight: .semibold))
+                .tracking(0.7).foregroundStyle(.secondary)
+            Text(entry.date.formatted(.dateTime.day()))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+            HStack(spacing: 6) {
+                Image(systemName: "sun.horizon.fill").font(.title2).foregroundStyle(accent)
+                Text("Open Daymark").font(.headline)
+            }
+            Text(emptyMessage)
+                .font(.caption).foregroundStyle(.secondary).lineLimit(3)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(4)
+    }
+
+    private var emptyMessage: String {
+        if DaymarkShared.isAppGroupAvailable == false {
+            return "Widgets can’t receive data in this build. Install a signed build with the App Group, then open Daymark once."
+        }
+        return "Your journal and events will appear here after you open the app once."
     }
 
     private var smallLayout: some View {
@@ -339,7 +354,8 @@ struct DaymarkWidgetView: View {
         Link(destination: todayLink) {
             HStack(spacing: 4) {
                 Image(systemName: "sun.max.fill").font(.system(size: compact ? 9 : 10))
-                Text("Open today").font(.system(size: compact ? 9 : 10, weight: .medium))
+                Text(entry.snapshot.isStale() ? "Stale · open to refresh" : "Open today")
+                    .font(.system(size: compact ? 9 : 10, weight: .medium))
             }
             .foregroundStyle(accent)
         }
@@ -353,6 +369,7 @@ struct DaymarkWidgetView: View {
 }
 
 struct DaymarkHabitWidgetView: View {
+
     @Environment(\.widgetFamily) private var family
     @Environment(\.colorScheme) private var colorScheme
     let entry: DaymarkWidgetEntry
@@ -382,11 +399,16 @@ struct DaymarkHabitWidgetView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "leaf.fill").font(.title2).foregroundStyle(accent)
-            Text("No habits today").font(.headline)
-            Text("Open Daymark to add a gentle habit.")
-                .font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Image(systemName: "leaf.fill").font(.title2).foregroundStyle(accent)
+                Text(entry.snapshot.hasRealData ? "No habits today" : "Open Daymark").font(.headline)
+            }
+            Text(entry.snapshot.hasRealData
+                ? "Open Daymark to add a gentle habit."
+                : (DaymarkShared.isAppGroupAvailable ? "Open Daymark once and your habits will appear here." : "Widgets can’t receive data in this build. Install a signed build with the App Group."))
+                .font(.caption).foregroundStyle(.secondary).lineLimit(3)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(4)
     }
 
@@ -487,37 +509,63 @@ struct DaymarkLockScreenView: View {
 
     var body: some View {
         Group {
-            switch family {
-            case .accessoryInline:
-                Text("\(percent)% · \(entry.snapshot.nextEvent?.title ?? "Daymark")")
-                    .lineLimit(1)
-            case .accessoryCircular:
-                ZStack {
-                    AccessoryWidgetBackground()
-                    Circle().stroke(.secondary.opacity(0.25), lineWidth: 4)
-                    Circle().trim(from: 0, to: progress?.fraction ?? 0)
-                        .stroke(style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .widgetAccentable()
-                    Text("\(percent)%").font(.system(size: 12, weight: .bold, design: .rounded)).monospacedDigit()
-                }
-            default:
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack {
-                        Text(entry.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
-                            .font(.caption2.weight(.semibold)).lineLimit(1)
-                        Spacer()
-                        Text("\(percent)%").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+            if !entry.snapshot.hasRealData {
+                lockEmptyBody
+            } else {
+                switch family {
+                case .accessoryInline:
+                    Text("\(percent)% · \(entry.snapshot.nextEvent?.title ?? "Daymark")")
+                        .lineLimit(1)
+                case .accessoryCircular:
+                    ZStack {
+                        AccessoryWidgetBackground()
+                        Circle().stroke(.secondary.opacity(0.25), lineWidth: 4)
+                        Circle().trim(from: 0, to: progress?.fraction ?? 0)
+                            .stroke(style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                            .widgetAccentable()
+                        Text("\(percent)%").font(.system(size: 12, weight: .bold, design: .rounded)).monospacedDigit()
                     }
-                    ProgressView(value: progress?.fraction ?? 0).tint(WidgetPalette.accent(colorScheme))
-                    if let next = entry.snapshot.nextEvent {
-                        Text("Next · \(next.title)").font(.caption2).lineLimit(1).foregroundStyle(.secondary)
-                    } else {
-                        Text("A quiet day ahead").font(.caption2).lineLimit(1).foregroundStyle(.secondary)
+                default:
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack {
+                            Text(entry.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                                .font(.caption2.weight(.semibold)).lineLimit(1)
+                            Spacer()
+                            Text("\(percent)%").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                        ProgressView(value: progress?.fraction ?? 0).tint(WidgetPalette.accent(colorScheme))
+                        if let next = entry.snapshot.nextEvent {
+                            Text("Next · \(next.title)").font(.caption2).lineLimit(1).foregroundStyle(.secondary)
+                        } else {
+                            Text("A quiet day ahead").font(.caption2).lineLimit(1).foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
         }
         .widgetURL(todayLink)
+    }
+
+    private var lockEmptyBody: some View {
+        Group {
+            switch family {
+            case .accessoryInline:
+                Text("\(entry.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())) · Open Daymark")
+                    .lineLimit(1)
+            case .accessoryCircular:
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Text(entry.date.formatted(.dateTime.day())).font(.system(size: 14, weight: .bold, design: .rounded))
+                }
+            default:
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(entry.date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                        .font(.caption2.weight(.semibold)).lineLimit(1)
+                    Text(DaymarkShared.isAppGroupAvailable ? "Open Daymark for today’s progress" : "Widgets unavailable in this build")
+                        .font(.caption2).lineLimit(1).foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 }
