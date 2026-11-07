@@ -15,6 +15,12 @@ struct AIProvidersView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 NavigationLink {
+                    AIChatView()
+                } label: {
+                    Label("AI Chat", systemImage: "message")
+                }
+                .accessibilityLabel("Open AI Chat")
+                NavigationLink {
                     AITaskAssignmentsView()
                 } label: {
                     Label("Task routing & assignment", systemImage: "slider.horizontal.3")

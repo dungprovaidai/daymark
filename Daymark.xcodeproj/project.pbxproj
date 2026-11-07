@@ -18,6 +18,12 @@
 			"path" = "Design/DesignSystem.swift";
 			"sourceTree" = "<group>";
 		};
+		"30D379D668A4D9687DB60170" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Features/AIChatView.swift";
+			"sourceTree" = "<group>";
+		};
 		"B3B092B26B30550075E08D16" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -235,6 +241,10 @@
 		"B1CD9EEFB1F08B500E93814C" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "86864BF85244299863BB0D3E";
+		};
+		"DC7F25014103306D4F1BE374" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "30D379D668A4D9687DB60170";
 		};
 		"8C038049A5D89D17AE899372" = {
 			"isa" = "PBXBuildFile";
@@ -562,6 +572,7 @@
 			"children" = (
 				"2121CFDB1B0186F1DB02C41C",
 				"86864BF85244299863BB0D3E",
+				"30D379D668A4D9687DB60170",
 				"B3B092B26B30550075E08D16",
 				"17D4221853B35291613BAEEB",
 				"9F68E56906B160C82FC0CA6C",
@@ -665,6 +676,7 @@
 			"files" = (
 				"1DC7BB2C57DD2F0928E8FC2F",
 				"B1CD9EEFB1F08B500E93814C",
+				"DC7F25014103306D4F1BE374",
 				"8C038049A5D89D17AE899372",
 				"DDA010A91BF61499E12A4422",
 				"5E34B3019A44AD09264137F6",
